@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card card-custom border-0 shadow-sm">
+    <div class="card-header bg-primary text-white">
+        <h5 class="m-0"><i class="fas fa-user-circle me-2"></i> HỒ SƠ CÁ NHÂN</h5>
+    </div>
+    <div class="card-body p-4">
+        <form method="POST" enctype="multipart/form-data">
+            <div class="row">
+                <div class="col-md-4 text-center border-end">
+                    <div class="mb-3 position-relative d-inline-block">
+                        {% if ava %}
+                            <img src="data:image/png;base64,{{ ava }}" class="img-thumbnail rounded-circle shadow-sm" style="width: 180px; height: 180px; object-fit: cover;">
+                        {% else %}
+                            <div class="bg-light rounded-circle d-flex align-items-center justify-content-center mx-auto shadow-sm" style="width: 180px; height: 180px; border: 4px solid #fff;">
+                                <i class="fas fa-user text-secondary" style="font-size: 80px;"></i>
+                            </div>
+                        {% endif %}
+                        
+                        <label class="position-absolute bottom-0 end-0 bg-white border rounded-circle p-2 shadow-sm" style="cursor: pointer;">
+                            <i class="fas fa-camera text-primary"></i>
+                            <input type="file" name="avatar" hidden accept="image/*" onchange="this.form.submit()">
+                        </label>
+                    </div>
+
+                    <h4 class="fw-bold text-dark mt-2">{{ sv[1] }}</h4>
+                    <span class="badge bg-secondary mb-3">{{ sv[0] }}</span>
+
+                    <div class="text-start mt-4 px-3">
+                        <p class="text-muted mb-1"><small>GIỚI TÍNH</small></p>
+                        <p class="fw-bold">{{ sv[2] }}</p>
+                        <hr class="my-2">
+                        
+                        <p class="text-muted mb-1"><small>NGÀY SINH</small></p>
+                        <p class="fw-bold">{{ sv[3].strftime('%d/%m/%Y') if sv[3] else '---' }}</p>
+                        <hr class="my-2">
+
+                        <p class="text-muted mb-1"><small>PHÒNG HIỆN TẠI</small></p>
+                        <p class="fw-bold text-success">{{ sv[7] if sv[7] else 'Chưa xếp phòng' }}</p>
+                        
+                        {% if sv[8] %}
+                        <p class="text-muted mb-0 small"><i class="fas fa-clock me-1"></i> Vào ở từ: {{ sv[8].strftime('%d/%m/%Y') }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="col-md-8 ps-md-5">
+                    <h5 class="text-primary mb-4 pb-2 border-bottom fw-bold">Thông Tin Liên Hệ</h5>
+                    
+                    <div class="alert alert-info py-2 small">
+                        <i class="fas fa-info-circle me-1"></i> Bạn chỉ có thể cập nhật thông tin liên lạc. Nếu sai tên hoặc ngày sinh, vui lòng liên hệ Admin.
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Số điện thoại:</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-white"><i class="fas fa-phone text-muted"></i></span>
+                            <input type="text" name="sdt" class="form-control" value="{{ sv[4] if sv[4] else '' }}" placeholder="Nhập số điện thoại...">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Email:</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-white"><i class="fas fa-envelope text-muted"></i></span>
+                            <input type="email" name="email" class="form-control" value="{{ sv[5] if sv[5] else '' }}" placeholder="example@email.com">
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Địa chỉ quê quán:</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-white"><i class="fas fa-map-marker-alt text-muted"></i></span>
+                            <input type="text" name="diachi" class="form-control" value="{{ sv[6] if sv[6] else '' }}" placeholder="Nhập địa chỉ...">
+                        </div>
+                    </div>
+
+                    <div class="text-end">
+                        <button type="submit" class="btn btn-primary px-4 fw-bold shadow-sm">
+                            <i class="fas fa-save me-2"></i> LƯU THAY ĐỔI
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

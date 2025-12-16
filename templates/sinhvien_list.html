@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>Danh Sách Sinh Viên</h2>
+    <a href="{{ url_for('sinhvien_add') }}" class="btn btn-success"><i class="fas fa-plus"></i> Thêm Mới</a>
+</div>
+
+<div class="card card-custom">
+    <div class="card-body">
+        <table class="table table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th>Mã SV</th>
+                    <th>Họ Tên</th>
+                    <th>Phòng</th>
+                    <th>SĐT</th>
+                    <th>Email</th>
+                    <th>Địa Chỉ</th>
+                    <th>Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for sv in sinhviens %}
+                <tr>
+                    <td>{{ sv[0] }}</td>
+                    <td>{{ sv[1] }}</td>
+                    <td>
+                        {% if sv[2] %} <span class="badge bg-primary">{{ sv[2] }}</span>
+                        {% else %} <span class="badge bg-secondary">Chưa xếp</span> {% endif %}
+                    </td>
+                    <td>{{ sv[3] }}</td>
+                    <td>{{ sv[4] }}</td>
+                    <td>{{ sv[5] }}</td>
+                    <td>
+                        <a href="#" class="btn btn-sm btn-warning"><i class="fas fa-edit"></i></a>
+                        <a href="#" class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

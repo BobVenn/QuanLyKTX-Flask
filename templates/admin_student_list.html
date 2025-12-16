@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="fw-bold text-secondary">DANH SÁCH SINH VIÊN</h3>
+    
+    <form class="d-flex" method="GET">
+        <input class="form-control me-2" type="search" name="keyword" value="{{ keyword }}" placeholder="Tìm kiếm (Tên/Mã)" style="width: 300px;">
+        <button class="btn btn-primary" type="submit">Tìm</button>
+    </form>
+</div>
+
+<div class="card card-custom border-0 shadow-sm">
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0 align-middle">
+            <thead class="text-white" style="background-color: #1abc9c;">
+                <tr class="text-center">
+                    <th>Mã SV</th>
+                    <th>Họ Tên</th>
+                    <th>Phòng</th>
+                    <th>SĐT</th>
+                    <th>Email</th>
+                    <th>Trạng thái HĐ</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in students %}
+                <tr style="cursor: pointer;" onclick="showStudentDetail('{{ s[0] }}')">
+                    <td class="text-danger fw-bold text-center">{{ s[0] }}</td>
+                    <td class="fw-bold">{{ s[1] }}</td>
+                    <td class="text-center text-danger fw-bold">{{ s[2] if s[2] else '---' }}</td>
+                    <td class="text-center text-danger">{{ s[3] }}</td>
+                    <td>{{ s[4] }}</td>
+                    <td class="text-center">
+                        {% if s[5] > 0 %}
+                            <span class="badge bg-danger">⚠ Nợ {{ s[5] }} HĐ</span>
+                        {% else %}
+                            <span class="badge bg-success">✅ Sạch nợ</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="modal fade" id="studentModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title fw-bold text-primary"><i class="fas fa-feather-alt me-2"></i> Hồ sơ sinh viên: <span id="modal_title_masv"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <ul class="nav nav-tabs mb-3" id="studentTab" role="tablist">
+                    <li class="nav-item">
+                        <button class="nav-link active fw-bold" id="info-tab" data-bs-toggle="tab" data-bs-target="#info" type="button"><i class="fas fa-user me-2"></i> Thông tin cá nhân</button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link text-dark" id="room-tab" data-bs-toggle="tab" data-bs-target="#room" type="button"><i class="fas fa-home me-2"></i> Thông tin cư trú</button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link text-dark" id="finance-tab" data-bs-toggle="tab" data-bs-target="#finance" type="button"><i class="fas fa-history me-2"></i> Lịch sử tài chính</button>
+                    </li>
+                </ul>
+
+                <div class="tab-content" id="studentTabContent" style="min-height: 300px;">
+                    
+                    <div class="tab-pane fade show active" id="info" role="tabpanel">
+                        <div class="row">
+                            <div class="col-md-4 text-center border-end">
+                                <div class="bg-light d-flex align-items-center justify-content-center mx-auto mb-3 shadow-sm" style="width: 160px; height: 190px; border: 1px solid #ddd;">
+                                    <img id="modal_avatar" src="" style="max-width: 100%; max-height: 100%; display: none;">
+                                    <span id="modal_no_img" class="text-muted">No Image</span>
+                                </div>
+                            </div>
+                            <div class="col-md-8 ps-4">
+                                <table class="table table-borderless">
+                                    <tr><td class="fw-bold" width="30%">Mã SV:</td><td id="m_masv"></td></tr>
+                                    <tr><td class="fw-bold">Họ Tên:</td><td id="m_hoten"></td></tr>
+                                    <tr><td class="fw-bold">Giới tính:</td><td id="m_gioitinh"></td></tr>
+                                    <tr><td class="fw-bold">Ngày sinh:</td><td id="m_ngaysinh"></td></tr>
+                                    <tr><td class="fw-bold">SĐT:</td><td id="m_sdt"></td></tr>
+                                    <tr><td class="fw-bold">Email:</td><td id="m_email"></td></tr>
+                                    <tr><td class="fw-bold">Quê quán:</td><td id="m_diachi"></td></tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="tab-pane fade p-4 text-center" id="room" role="tabpanel">
+                        <h4 class="text-center mb-4">Phòng hiện tại: <span class="text-success fw-bold" id="m_phong" style="font-size: 1.5em;"></span></h4>
+                        <div class="text-center text-muted">
+                            <p><i class="fas fa-calendar-check me-2"></i> Ngày vào ở: <span id="m_ngayvao" class="fw-bold text-dark"></span></p>
+                        </div>
+                    </div>
+
+                    <div class="tab-pane fade" id="finance" role="tabpanel">
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-striped text-center align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Nội dung</th>
+                                        <th>Số tiền</th>
+                                        <th>Ngày lập</th>
+                                        <th>Trạng thái</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="m_bill_list">
+                                    </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showStudentDetail(masv) {
+    // 1. Reset dữ liệu cũ để hiển thị trạng thái đang tải
+    document.getElementById('m_bill_list').innerHTML = '<tr><td colspan="4" class="text-center py-3 text-muted">Đang tải dữ liệu...</td></tr>';
+    document.getElementById('modal_title_masv').innerText = "...";
+    
+    // 2. Mở Modal ngay lập tức
+    var myModal = new bootstrap.Modal(document.getElementById('studentModal'));
+    myModal.show();
+
+    // 3. Gọi API lấy thông tin
+    fetch('/api/student/' + masv)
+        .then(response => response.json())
+        .then(data => {
+            // --- A. ĐỔ DỮ LIỆU CÁ NHÂN & CƯ TRÚ ---
+            document.getElementById('modal_title_masv').innerText = data.masv;
+            document.getElementById('m_masv').innerText = data.masv;
+            document.getElementById('m_hoten').innerText = data.hoten;
+            document.getElementById('m_gioitinh').innerText = data.gioitinh;
+            document.getElementById('m_ngaysinh').innerText = data.ngaysinh;
+            document.getElementById('m_sdt').innerText = data.sdt;
+            document.getElementById('m_email').innerText = data.email;
+            document.getElementById('m_diachi').innerText = data.diachi;
+            
+            // Xử lý hiển thị phòng và ngày vào
+            document.getElementById('m_phong').innerText = data.phong;
+            // Nếu API có trả về ngày vào thì hiện, không thì ẩn
+            if(data.ngayvao) {
+                 document.getElementById('m_phong').innerHTML += `<br><small class="text-muted fw-normal" style="font-size: 14px;">(Vào ở từ: ${data.ngayvao})</small>`;
+            }
+
+            // --- B. XỬ LÝ ẢNH ĐẠI DIỆN ---
+            const img = document.getElementById('modal_avatar');
+            const noImg = document.getElementById('modal_no_img');
+            if (data.avatar) {
+                img.src = "data:image/png;base64," + data.avatar;
+                img.style.display = 'block';
+                noImg.style.display = 'none';
+            } else {
+                img.style.display = 'none';
+                noImg.style.display = 'block';
+            }
+
+            // --- C. XỬ LÝ LỊCH SỬ TÀI CHÍNH (PHẦN BẠN ĐANG THIẾU) ---
+            const tbody = document.getElementById('m_bill_list');
+            tbody.innerHTML = ''; // Xóa chữ 'Đang tải...'
+
+            if (data.bills && data.bills.length > 0) {
+                data.bills.forEach(bill => {
+                    // Logic màu sắc trạng thái
+                    let badgeClass = '';
+                    let icon = '';
+                    
+                    if (bill.stt === 'Đã thanh toán') {
+                        badgeClass = 'bg-success';
+                        icon = '<i class="fas fa-check-circle me-1"></i>';
+                    } else {
+                        badgeClass = 'bg-danger';
+                        icon = '<i class="fas fa-exclamation-circle me-1"></i>';
+                    }
+                    
+                    let row = `<tr>
+                        <td class="text-start ps-4 fw-bold">${bill.loai}</td>
+                        <td class="text-danger fw-bold">${bill.tien} VNĐ</td>
+                        <td>${bill.ngay}</td>
+                        <td><span class="badge ${badgeClass}">${icon} ${bill.stt}</span></td>
+                    </tr>`;
+                    tbody.innerHTML += row;
+                });
+            } else {
+                tbody.innerHTML = '<tr><td colspan="4" class="py-4 text-muted"><i class="fas fa-search me-2"></i>Chưa có lịch sử giao dịch nào</td></tr>';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('m_bill_list').innerHTML = '<tr><td colspan="4" class="text-danger">Lỗi tải dữ liệu!</td></tr>';
+        });
+}
+</script>
+
+{% endblock %}

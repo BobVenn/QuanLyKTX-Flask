@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="text-center mb-4">
+    <h3 class="fw-bold text-secondary text-uppercase">QUẢN LÝ TÀI SẢN & THIẾT BỊ</h3>
+</div>
+
+<div class="card card-custom mb-4" style="min-height: 400px;">
+    <div class="card-header bg-white py-3">
+        <div class="row align-items-center">
+            <div class="col-md-4 d-flex align-items-center">
+                <label class="me-2 fw-bold">Lọc Phòng:</label>
+                <select class="form-select w-50" id="filterRoom" onchange="filterTable()">
+                    <option value="">Tất cả</option>
+                    {% for r in rooms %}
+                        <option value="{{ r }}">{{ r }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4 d-flex align-items-center">
+                <label class="me-2 fw-bold">Tìm tên:</label>
+                <input type="text" id="searchInput" class="form-control" onkeyup="filterTable()" placeholder="Nhập tên thiết bị...">
+            </div>
+        </div>
+    </div>
+
+    <div class="card-body p-0 table-responsive">
+        <table class="table table-hover table-bordered mb-0 align-middle text-center" id="deviceTable">
+            <thead class="text-white" style="background-color: #1abc9c;">
+                <tr>
+                    <th>Mã TB</th>
+                    <th>Tên Thiết Bị</th>
+                    <th>Phòng</th>
+                    <th>Tòa</th>
+                    <th>Khu</th>
+                    <th>Trạng Thái</th>
+                    <th>Ngày Mua</th>
+                    <th>Giá Trị</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for d in devices %}
+                <tr style="cursor: pointer;" onclick="selectRow(this, '{{ d[0] }}', '{{ d[1] }}', '{{ d[2] }}', '{{ d[5] }}', '{{ d[6] }}', '{{ d[7] }}')">
+                    <td>{{ d[0] }}</td>
+                    <td class="fw-bold text-start ps-3">{{ d[1] }}</td>
+                    <td class="text-primary fw-bold">{{ d[2] }}</td>
+                    <td>{{ d[3] if d[3] else '-' }}</td>
+                    <td>{{ d[4] if d[4] else '-' }}</td>
+                    <td>
+                        {% if d[5] == 'Tốt' %} <span class="badge bg-success">Tốt</span>
+                        {% elif d[5] == 'Hỏng' %} <span class="badge bg-danger">Hỏng</span>
+                        {% elif d[5] == 'Đang sửa' %} <span class="badge bg-warning text-dark">Đang sửa</span>
+                        {% else %} <span class="badge bg-secondary">{{ d[5] }}</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ d[6].strftime('%Y-%m-%d') if d[6] else '' }}</td>
+                    <td class="fw-bold">{{ "{:,.0f}".format(d[7]) if d[7] else '0' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card card-custom border-primary">
+    <div class="card-header bg-white fw-bold text-primary">
+        <i class="fas fa-info-circle me-1"></i> Thông Tin Chi Tiết
+    </div>
+    <div class="card-body bg-light">
+        <form action="{{ url_for('admin_device_action') }}" method="POST" id="deviceForm">
+            <input type="hidden" name="action" id="formAction">
+            
+            <div class="row mb-3">
+                <div class="col-md-2">
+                    <label class="form-label fw-bold">Mã TB (Auto):</label>
+                    <input type="text" name="matb" id="inp_matb" class="form-control bg-white" readonly placeholder="---">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">Tên thiết bị:</label>
+                    <input type="text" name="ten" id="inp_ten" class="form-control" required>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-bold">Vị trí (Phòng):</label>
+                    <select name="phong" id="inp_phong" class="form-select" required>
+                        {% for r in rooms %}
+                            <option value="{{ r }}">{{ r }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-bold">Ngày mua:</label>
+                    <input type="date" name="ngay" id="inp_ngay" class="form-control">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-bold">Giá trị (VNĐ):</label>
+                    <input type="number" name="gia" id="inp_gia" class="form-control" value="0">
+                </div>
+            </div>
+
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">Trạng thái:</label>
+                    <select name="trangthai" id="inp_trangthai" class="form-select">
+                        <option value="Tốt">Tốt</option>
+                        <option value="Hỏng">Hỏng</option>
+                        <option value="Đang sửa">Đang sửa</option>
+                        <option value="Thanh lý">Thanh lý</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="d-flex gap-2 border-top pt-3">
+                <button type="button" class="btn btn-secondary px-4" onclick="resetForm()">
+                    <i class="fas fa-sync-alt me-1"></i> Làm mới
+                </button>
+
+                <button type="submit" onclick="setAction('add')" class="btn btn-success px-4 fw-bold">
+                    <i class="fas fa-plus me-1"></i> + Thêm Mới
+                </button>
+
+                <button type="submit" onclick="setAction('update')" class="btn btn-warning px-4 fw-bold text-white">
+                    <i class="fas fa-edit me-1"></i> Cập Nhật
+                </button>
+
+                <button type="submit" onclick="return confirmDelete()" class="btn btn-danger px-4">
+                    <i class="fas fa-trash-alt me-1"></i> Xóa
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Hàm khi click vào dòng trong bảng
+    function selectRow(row, matb, ten, phong, trangthai, ngay, gia) {
+        // Highlight dòng được chọn
+        var rows = document.querySelectorAll("#deviceTable tbody tr");
+        rows.forEach(r => r.classList.remove("table-active"));
+        row.classList.add("table-active");
+
+        // Đổ dữ liệu vào form
+        document.getElementById('inp_matb').value = matb;
+        document.getElementById('inp_ten').value = ten;
+        document.getElementById('inp_phong').value = phong;
+        document.getElementById('inp_trangthai').value = trangthai;
+        document.getElementById('inp_gia').value = parseInt(gia);
+        
+        // Xử lý ngày (cắt chuỗi lấy YYYY-MM-DD)
+        if(ngay && ngay != 'None') {
+            document.getElementById('inp_ngay').value = ngay.split(' ')[0]; 
+        }
+    }
+
+    // Hàm đặt action cho form (add/update/delete)
+    function setAction(actionType) {
+        document.getElementById('formAction').value = actionType;
+    }
+
+    // Hàm xác nhận xóa
+    function confirmDelete() {
+        setAction('delete');
+        var id = document.getElementById('inp_matb').value;
+        if (!id) {
+            alert("Vui lòng chọn thiết bị cần xóa trong bảng!");
+            return false;
+        }
+        return confirm("Bạn chắc chắn muốn xóa thiết bị có Mã: " + id + "?");
+    }
+
+    // Hàm làm mới form
+    function resetForm() {
+        document.getElementById("deviceForm").reset();
+        document.getElementById('inp_matb').value = "";
+        
+        // Đặt ngày mặc định là hôm nay
+        var today = new Date().toISOString().split('T')[0];
+        document.getElementById('inp_ngay').value = today;
+        
+        // Bỏ highlight bảng
+        var rows = document.querySelectorAll("#deviceTable tbody tr");
+        rows.forEach(r => r.classList.remove("table-active"));
+    }
+
+    // Hàm lọc bảng (Search + Filter)
+    function filterTable() {
+        var input = document.getElementById("searchInput").value.toUpperCase();
+        var roomFilter = document.getElementById("filterRoom").value.toUpperCase();
+        var table = document.getElementById("deviceTable");
+        var tr = table.getElementsByTagName("tr");
+
+        for (var i = 1; i < tr.length; i++) {
+            var tdName = tr[i].getElementsByTagName("td")[1]; // Cột Tên
+            var tdRoom = tr[i].getElementsByTagName("td")[2]; // Cột Phòng
+            
+            if (tdName && tdRoom) {
+                var txtName = tdName.textContent || tdName.innerText;
+                var txtRoom = tdRoom.textContent || tdRoom.innerText;
+                
+                var showName = txtName.toUpperCase().indexOf(input) > -1;
+                var showRoom = roomFilter === "" || txtRoom.toUpperCase() === roomFilter;
+
+                if (showName && showRoom) {
+                    tr[i].style.display = "";
+                } else {
+                    tr[i].style.display = "none";
+                }
+            }       
+        }
+    }
+    
+    // Tự động reset form khi load trang
+    window.onload = resetForm;
+</script>
+
+{% endblock %}

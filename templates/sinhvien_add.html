@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card card-custom">
+            <div class="card-header bg-success text-white">
+                <h4><i class="fas fa-user-plus"></i> Thêm Sinh Viên Mới</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Mã Sinh Viên (*)</label>
+                            <input type="text" name="masv" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Họ và Tên (*)</label>
+                            <input type="text" name="hoten" class="form-control" required>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Giới tính</label>
+                            <select name="gioitinh" class="form-select">
+                                <option value="Nam">Nam</option>
+                                <option value="Nữ">Nữ</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Ngày sinh</label>
+                            <input type="date" name="ngaysinh" class="form-control">
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Số điện thoại</label>
+                            <input type="text" name="sdt" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Email</label>
+                            <input type="email" name="email" class="form-control">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Địa chỉ quê quán</label>
+                        <input type="text" name="diachi" class="form-control">
+                    </div>
+
+                    <hr>
+                    <div class="mb-3">
+                        <label class="form-label text-primary font-weight-bold">Mật khẩu cấp mặc định (*)</label>
+                        <input type="text" name="password" class="form-control" value="123456" required>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success btn-lg">Lưu Sinh Viên</button>
+                        <a href="{{ url_for('sinhvien_list') }}" class="btn btn-secondary">Quay lại</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

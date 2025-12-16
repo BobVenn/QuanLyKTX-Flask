@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3 class="fw-bold text-secondary"><i class="fas fa-wallet me-2"></i> LỊCH SỬ GIAO DỊCH</h3>
+</div>
+
+<div class="card card-custom border-0 shadow-sm">
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0 align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Mã HĐ</th>
+                    <th>Nội dung</th>
+                    <th>Số tiền</th>
+                    <th>Ngày lập</th>
+                    <th>Ngày TT</th>
+                    <th>Trạng thái / Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for h in history %}
+                <tr>
+                    <td>#{{ h[0] }}</td>
+                    <td>{{ h[1] }}</td>
+                    <td class="fw-bold text-danger">{{ "{:,.0f}".format(h[2]) }} đ</td>
+                    <td>{{ h[3].strftime('%d/%m/%Y') }}</td>
+                    <td>{{ h[4].strftime('%d/%m/%Y') if h[4] else '-' }}</td>
+                    <td>
+                        {% if h[5] == 'Đã thanh toán' %}
+                            <span class="badge bg-success rounded-pill px-3">
+                                <i class="fas fa-check-circle me-1"></i> Thành công
+                            </span>
+                        {% else %}
+                            <button class="btn btn-danger btn-sm px-3 fw-bold" 
+                                    onclick="openPaymentModal('{{ h[0] }}', '{{ h[2] }}', '{{ h[1] }}')">
+                                <i class="fas fa-qrcode me-1"></i> Thanh toán ngay
+                            </button>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="6" class="text-center py-4 text-muted">Chưa có giao dịch nào</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="modal fade" id="paymentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title fw-bold"><i class="fas fa-qrcode me-2"></i> QUÉT MÃ THANH TOÁN</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center p-4">
+                <h5 class="text-primary fw-bold mb-1" id="pay_amount"></h5>
+                <p class="text-muted small mb-4" id="pay_content"></p>
+                
+                <div class="border p-2 d-inline-block rounded mb-3 bg-white">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=ThanhToanHocPhi" 
+                         alt="QR Code" style="width: 200px;">
+                </div>
+                
+                <div class="alert alert-warning small text-start">
+                    <i class="fas fa-info-circle"></i> <strong>Hướng dẫn:</strong><br>
+                    1. Mở App ngân hàng quét mã trên.<br>
+                    2. Chuyển khoản đúng số tiền.<br>
+                    3. Bấm nút "Xác nhận đã chuyển" bên dưới.
+                </div>
+
+                <form action="{{ url_for('student_pay') }}" method="POST">
+                    <input type="hidden" name="ma_hd" id="pay_id">
+                    <button type="submit" class="btn btn-success w-100 fw-bold py-2">
+                        <i class="fas fa-check-double me-2"></i> XÁC NHẬN ĐÃ CHUYỂN KHOẢN
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function openPaymentModal(id, amount, content) {
+    document.getElementById('pay_id').value = id;
+    document.getElementById('pay_amount').innerText = parseInt(amount).toLocaleString('vi-VN') + " VNĐ";
+    document.getElementById('pay_content').innerText = content;
+    
+    new bootstrap.Modal(document.getElementById('paymentModal')).show();
+}
+</script>
+{% endblock %}

@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card card-stat mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5><i class="fas fa-search"></i> TÌM KIẾM NÂNG CAO</h5>
+    </div>
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('admin_search') }}">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label>Tìm theo:</label>
+                    <select name="search_by" class="form-select">
+                        <option value="Mã SV" {% if sb=='Mã SV' %}selected{% endif %}>Mã SV</option>
+                        <option value="Họ Tên" {% if sb=='Họ Tên' %}selected{% endif %}>Họ Tên</option>
+                        <option value="Phòng" {% if sb=='Phòng' %}selected{% endif %}>Phòng</option>
+                        <option value="SĐT" {% if sb=='SĐT' %}selected{% endif %}>Số điện thoại</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label>Từ khóa:</label>
+                    <input type="text" name="keyword" class="form-control" value="{{ k }}" placeholder="Nhập thông tin...">
+                </div>
+                <div class="col-md-3">
+                    <label>Trạng thái phòng:</label>
+                    <select name="status" class="form-select">
+                        <option value="Tất cả" {% if st=='Tất cả' %}selected{% endif %}>Tất cả</option>
+                        <option value="Có phòng" {% if st=='Có phòng' %}selected{% endif %}>Đã có phòng</option>
+                        <option value="Chưa có phòng" {% if st=='Chưa có phòng' %}selected{% endif %}>Chưa có phòng</option>
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">🔍 Tìm Kiếm</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card card-stat">
+    <div class="card-body">
+        <h6 class="text-success fst-italic">Tìm thấy {{ results|length }} kết quả</h6>
+        <table class="table table-bordered table-hover mt-3">
+            <thead class="table-light">
+                <tr>
+                    <th>Mã SV</th>
+                    <th>Họ Tên</th>
+                    <th>Phòng</th>
+                    <th>SĐT</th>
+                    <th>Địa Chỉ</th>
+                    <th>HĐ Chưa TT</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in results %}
+                <tr>
+                    <td><b>{{ row[0] }}</b></td>
+                    <td>{{ row[1] }}</td>
+                    <td><span class="badge bg-info text-dark">{{ row[2] if row[2] else '---' }}</span></td>
+                    <td>{{ row[4] }}</td>
+                    <td>{{ row[3] }}</td>
+                    <td>
+                        {% if row[5] > 0 %}
+                            <span class="badge bg-danger">{{ row[5] }} hóa đơn</span>
+                        {% else %}
+                            <span class="badge bg-success">Sạch</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+<div class="mt-3 text-end">
+    <a href="{{ url_for('export_excel') }}" class="btn btn-success"><i class="fas fa-file-excel"></i> Xuất Toàn Bộ Excel</a>
+</div>
+{% endblock %}

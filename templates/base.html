@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <title>Hệ Thống Quản Lý KTX - eHPUni</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f0f2f5;
+            overflow-x: hidden;
+            margin: 0; padding: 0;
+        }
+
+        /* --- SIDEBAR (MENU) --- */
+        .sidebar {
+            height: 100vh;
+            width: 260px;
+            position: fixed;
+            top: 0; left: 0;
+            background-color: #2c3e50;
+            color: #fff;
+            overflow-y: auto;
+            z-index: 1050; /* Cao hơn nội dung */
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease-in-out; /* Hiệu ứng trượt */
+        }
+
+        /* Header Sidebar */
+        .sidebar-header {
+            padding: 20px 15px;
+            background-color: #233342;
+            border-bottom: 1px solid #34495e;
+            display: flex; align-items: center;
+        }
+        .sidebar-logo { width: 45px; height: 45px; margin-right: 12px; object-fit: contain; }
+        .sidebar-brand-text { color: #fff; line-height: 1.2; font-size: 14px; }
+        .sidebar-brand-text .school-name { font-size: 18px; font-weight: 700; color: #1abc9c;  }
+
+        /* Link Menu */
+        .sidebar .nav-link {
+            color: #bdc3c7; padding: 12px 20px; font-size: 15px;
+            border-left: 4px solid transparent; display: flex; align-items: center;
+        }
+        .sidebar .nav-link i { width: 25px; margin-right: 10px; font-size: 16px; text-align: center; }
+        .sidebar .nav-link:hover { background-color: #34495e; color: #fff; }
+        .sidebar .nav-link.active { background-color: #34495e; color: #1abc9c; border-left-color: #1abc9c; font-weight: 600; }
+        .menu-label { padding: 15px 20px 5px 20px; font-size: 11px;  color: #7f8c8d; font-weight: 700; }
+
+        /* --- MAIN CONTENT --- */
+        .main-content {
+            margin-left: 260px; /* PC: Đẩy sang phải */
+            padding: 25px;
+            width: calc(100% - 260px);
+            min-height: 100vh;
+            transition: margin-left 0.3s ease-in-out, width 0.3s ease-in-out;
+        }
+
+        /* Nút mở menu (Chỉ hiện trên Mobile) */
+        .mobile-toggle-btn {
+            display: none; /* Ẩn trên PC */
+            position: fixed;
+            top: 15px; right: 15px;
+            z-index: 1040;
+            background: #2c3e50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        /* Lớp phủ đen khi mở menu trên mobile */
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1045;
+        }
+
+        /* --- MOBILE RESPONSIVE (Màn hình nhỏ hơn 768px) --- */
+        @media (max-width: 768px) {
+            /* Ẩn sidebar sang trái */
+            .sidebar { transform: translateX(-100%); }
+            
+            /* Khi có class 'show', trượt sidebar ra */
+            .sidebar.show { transform: translateX(0); }
+
+            /* Nội dung tràn full màn hình */
+            .main-content { margin-left: 0; width: 100%; padding: 15px; padding-top: 70px; /* Chừa chỗ cho nút menu */ }
+
+            /* Hiện nút menu */
+            .mobile-toggle-btn { display: block; }
+
+            /* Card nhỏ lại chút */
+            .card-body { padding: 15px; }
+            
+            /* Chỉnh bảng cho đỡ vỡ (Cuộn ngang) */
+            .table-responsive { overflow-x: auto; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+    <button class="mobile-toggle-btn" onclick="toggleSidebar()">
+        <i class="fas fa-bars fa-lg"></i>
+    </button>
+
+    <div class="sidebar" id="mainSidebar">
+        <div class="sidebar-header">
+            <img src="{{ url_for('static', filename='logo1.png') }}" 
+                 alt="Logo" class="sidebar-logo" 
+                 onerror="this.src='https://via.placeholder.com/50?text=HP'">
+            <div class="sidebar-brand-text">
+                <span>Ký túc xá SV</span><br>
+                <span class="school-name">eHPUni</span>
+            </div>
+            <button class="btn text-white ms-auto d-md-none" onclick="toggleSidebar()"><i class="fas fa-times"></i></button>
+        </div>
+
+        <div class="d-flex flex-column">
+            {% if session['role'] == 'admin' %}
+                <div class="menu-label">Quản Trị</div>
+                <a href="{{ url_for('admin_dashboard') }}" class="nav-link {{ 'active' if request.endpoint == 'admin_dashboard' }}"><i class="fas fa-home"></i> <span>Trang chủ</span></a>
+                <a href="{{ url_for('admin_profile') }}" class="nav-link {{ 'active' if request.endpoint == 'admin_profile' }}"><i class="fas fa-user-shield"></i> <span>Thông tin cá nhân</span></a>
+                <a href="{{ url_for('admin_account') }}" class="nav-link {{ 'active' if request.endpoint == 'admin_account' }}"><i class="fas fa-users-cog"></i> <span>Quản lý tài khoản</span></a>
+                <a href="{{ url_for('admin_approve') }}" class="nav-link {{ 'active' if request.endpoint == 'admin_approve' }}"><i class="fas fa-file-signature"></i> <span>Duyệt đơn đăng ký</span></a>
+                <a href="{{ url_for('admin_device') }}" class="nav-link {{ 'active' if request.endpoint == 'admin_device' }}"><i class="fas fa-cogs"></i> <span>Quản lý thiết bị</span></a>
+                <a href="{{ url_for('admin_phong') }}" class="nav-link {{ 'active' if request.endpoint == 'admin_phong' }}"><i class="fas fa-bed"></i> <span>QL phòng & Xếp chỗ</span></a>
+                <a href="{{ url_for('admin_student_list') }}" class="nav-link {{ 'active' if request.endpoint == 'admin_student_list' }}"><i class="fas fa-user-graduate"></i> <span>Danh sách SV</span></a>
+                <a href="{{ url_for('admin_hoadon') }}" class="nav-link {{ 'active' if request.endpoint == 'admin_hoadon' }}"><i class="fas fa-file-invoice-dollar"></i> <span>QL hóa đơn</span></a>
+                <a href="{{ url_for('admin_dashboard') }}" class="nav-link"><i class="fas fa-chart-pie"></i> <span>Thống kê</span></a>
+                <a href="{{ url_for('admin_fix') }}" class="nav-link {{ 'active' if request.endpoint == 'admin_fix' }}"><i class="fas fa-tools"></i> <span>Yêu cầu sửa chữa</span></a>
+                
+                <div class="menu-label">Tiện ích</div>
+                <a href="{{ url_for('admin_student_import') }}" class="nav-link {{ 'active' if request.endpoint == 'admin_student_import' }}"><i class="fas fa-file-import"></i> <span>Nhập Excel (SV)</span></a>
+                <a href="{{ url_for('export_excel') }}" class="nav-link"><i class="fas fa-file-export"></i> <span>Xuất báo cáo Excel</span></a>
+
+            {% elif session['role'] == 'sinhvien' %}
+                <div class="menu-label">Cá Nhân</div>
+                <a href="{{ url_for('student_home') }}" class="nav-link {{ 'active' if request.endpoint == 'student_home' }}"><i class="fas fa-home"></i> <span>Trang chủ</span></a>
+                <a href="{{ url_for('student_profile') }}" class="nav-link {{ 'active' if request.endpoint == 'student_profile' }}"><i class="fas fa-user"></i> <span>Thông tin cá nhân</span></a>
+                <a href="{{ url_for('student_roommates') }}" class="nav-link {{ 'active' if request.endpoint == 'student_roommates' }}"><i class="fas fa-users"></i> <span>Bạn cùng phòng</span></a>
+                <a href="{{ url_for('student_room') }}" class="nav-link {{ 'active' if request.endpoint == 'student_room' }}"><i class="fas fa-door-open"></i> <span>Đăng ký Phòng</span></a>
+                <a href="{{ url_for('student_fix') }}" class="nav-link {{ 'active' if request.endpoint == 'student_fix' }}"><i class="fas fa-exclamation-triangle"></i> <span>Báo hỏng</span></a>
+                <a href="{{ url_for('student_payment') }}" class="nav-link {{ 'active' if request.endpoint == 'student_payment' }}"><i class="fas fa-wallet"></i> <span>Thanh toán</span></a>
+            {% endif %}
+
+            <div class="mt-4 pb-5">
+                <a href="{{ url_for('change_password') }}" class="nav-link {{ 'active' if request.endpoint == 'change_password' }}"><i class="fas fa-key"></i> <span>Đổi mật khẩu</span></a>
+                <a href="{{ url_for('logout') }}" class="nav-link text-danger border-top border-secondary mt-2"><i class="fas fa-sign-out-alt"></i> <span>Đăng xuất</span></a>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="container-fluid px-0 mb-3">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Hàm đóng mở menu trên mobile
+        function toggleSidebar() {
+            const sidebar = document.getElementById('mainSidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            sidebar.classList.toggle('show');
+            overlay.style.display = sidebar.classList.contains('show') ? 'block' : 'none';
+        }
+    </script>
+</body>
+</html>

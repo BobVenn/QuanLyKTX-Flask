@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="bg-teal text-white p-4 mb-4 rounded shadow-sm d-flex justify-content-between align-items-center" style="background-color: #1abc9c;">
+    <h2 class="m-0 fw-bold text-uppercase">Hệ Thống Quản Lý KTX - Quản Trị Viên</h2>
+    <span class="fst-italic">Hôm nay, {{ now }}</span>
+</div>
+
+<div class="row g-4 mb-5">
+    <div class="col-md-3">
+        <div class="card border-start border-5 border-primary shadow-sm h-100">
+            <div class="card-body">
+                <h6 class="text-muted text-uppercase small">Tổng Sinh Viên</h6>
+                <div class="d-flex justify-content-between align-items-center">
+                    <h1 class="text-primary fw-bold mb-0">{{ stats.sv }}</h1>
+                    <i class="fas fa-user-graduate fa-2x text-black-50"></i>
+                </div>
+                <small class="text-muted">Sinh viên đang ở</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-start border-5 border-success shadow-sm h-100">
+            <div class="card-body">
+                <h6 class="text-muted text-uppercase small">Phòng Còn Trống</h6>
+                <div class="d-flex justify-content-between align-items-center">
+                    <h1 class="text-success fw-bold mb-0">{{ stats.phong }}</h1>
+                    <i class="fas fa-home fa-2x text-black-50"></i>
+                </div>
+                <small class="text-muted">Có thể xếp ngay</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-start border-5 border-danger shadow-sm h-100">
+            <div class="card-body">
+                <h6 class="text-muted text-uppercase small">Sự Cố Chờ Xử Lý</h6>
+                <div class="d-flex justify-content-between align-items-center">
+                    <h1 class="text-danger fw-bold mb-0">1</h1> <i class="fas fa-tools fa-2x text-black-50"></i>
+                </div>
+                <small class="text-muted">Cần thợ sửa gấp</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-start border-5 border-warning shadow-sm h-100">
+            <div class="card-body">
+                <h6 class="text-muted text-uppercase small">Hóa Đơn Chưa Thu</h6>
+                <div class="d-flex justify-content-between align-items-center">
+                    <h1 class="text-warning fw-bold mb-0">{{ stats.no }}</h1>
+                    <i class="fas fa-file-invoice-dollar fa-2x text-black-50"></i>
+                </div>
+                <small class="text-muted">Cần nhắc nhở</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<h4 class="mb-3 text-secondary"><i class="fas fa-bolt text-warning me-2"></i> TRUY CẬP NHANH</h4>
+<div class="d-flex gap-3">
+    <a href="#" class="btn btn-dark btn-lg px-4"><i class="fas fa-plus me-2"></i> Thêm Sinh Viên</a>
+    <a href="{{ url_for('admin_phong') }}" class="btn btn-success btn-lg px-4" style="background-color: #1abc9c; border:none;"><i class="fas fa-building me-2"></i> Xếp Phòng (Mới)</a>
+    <a href="{{ url_for('admin_hoadon') }}" class="btn btn-warning text-white btn-lg px-4" style="background-color: #d35400; border:none;"><i class="fas fa-file-invoice me-2"></i> Quản Lý Công Nợ</a>
+</div>
+
+{% if plot_url %}
+<div class="card mt-5 shadow-sm">
+    <div class="card-body">
+        <h5 class="card-title text-muted mb-4">BIỂU ĐỒ DOANH THU</h5>
+        <img src="data:image/png;base64,{{ plot_url }}" class="w-100" style="height: 300px; object-fit: contain;">
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}

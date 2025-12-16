@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex align-items-center mb-3">
+    <h3 class="fw-bold text-dark">🔧 Xử Lý Sự Cố</h3>
+</div>
+
+<div class="row">
+    <div class="col-md-7">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-dark text-white fw-bold">
+                Danh sách yêu cầu
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0 align-middle">
+                    <thead class="table-light border-bottom">
+                        <tr>
+                            <th>SV</th>
+                            <th>Thiết bị</th>
+                            <th>Mức độ</th>
+                            <th>Trạng thái</th>
+                            <th>Chọn</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in reqs %}
+                        <tr>
+                            <td class="fw-bold">{{ r.masv }}</td>
+                            <td>{{ r.tb }}</td>
+                            <td>{{ r.lv }}</td>
+                            <td>
+                                {% if r.stt == 'Chờ xử lý' %}<span class="text-warning fw-bold">Chờ xử lý</span>
+                                {% elif r.stt == 'Hoàn thành' %}<span class="text-success fw-bold">Hoàn thành</span>
+                                {% else %}<span class="text-primary fw-bold">{{ r.stt }}</span>{% endif %}
+                            </td>
+                            <td>
+                                <button class="btn btn-primary btn-sm px-3" 
+                                onclick="show('{{ r.id }}','{{ r.masv }}','{{ r.desc }}','{{ r.stt }}','{{ r.cost }}','{{ r.img }}')">
+                                    Xem
+                                </button>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="5" class="text-center py-4">Không có dữ liệu</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-5">
+        <div class="card shadow-sm h-100 border-0">
+            <div class="card-header text-dark fw-bold" style="background-color: #f1c40f;">
+                Chi tiết & Xử lý
+            </div>
+            <div class="card-body bg-white">
+                <div class="bg-light d-flex align-items-center justify-content-center mb-3 text-muted" 
+                     style="height: 250px; border: 1px dashed #ccc;">
+                    <img id="view_img" src="" style="max-height: 100%; max-width: 100%; display: none;">
+                    <span id="no_img">Chưa chọn ảnh</span>
+                </div>
+
+                <form method="POST">
+                    <input type="hidden" name="req_id" id="view_id">
+                    <input type="hidden" name="ma_sv" id="view_sv">
+                    
+                    <div class="mb-3">
+                        <label class="fw-bold">Mô tả:</label>
+                        <span id="view_desc" class="text-dark">...</span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="fw-bold">Trạng thái:</label>
+                        <select name="status" id="view_stt" class="form-select mt-1">
+                            <option>Chờ xử lý</option>
+                            <option>Đang xử lý</option>
+                            <option>Hoàn thành</option>
+                            <option>Hủy bỏ</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="fw-bold">Chi phí (VNĐ): <span class="text-danger fw-normal small">*Tự tạo HĐ nếu > 0</span></label>
+                        <input type="number" name="cost" id="view_cost" class="form-control mt-1" value="0">
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button class="btn btn-success fw-bold py-2"><i class="fas fa-save me-2"></i> CẬP NHẬT</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function show(id, sv, desc, stt, cost, img) {
+    document.getElementById('view_id').value = id;
+    document.getElementById('view_sv').value = sv;
+    document.getElementById('view_desc').innerText = desc;
+    document.getElementById('view_stt').value = stt;
+    document.getElementById('view_cost').value = parseInt(cost);
+    
+    var imgTag = document.getElementById('view_img');
+    var noImg = document.getElementById('no_img');
+    
+    if(img && img != 'None') {
+        imgTag.src = "data:image/png;base64," + img;
+        imgTag.style.display = 'block';
+        noImg.style.display = 'none';
+    } else {
+        imgTag.style.display = 'none';
+        noImg.style.display = 'block';
+    }
+}
+</script>
+{% endblock %}

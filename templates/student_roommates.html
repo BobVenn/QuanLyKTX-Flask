@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block content %}
+<h4 class="mb-4 text-secondary"><i class="fas fa-users me-2"></i> DANH SÁCH BẠN CÙNG PHÒNG: <span class="text-primary">{{ phong }}</span></h4>
+
+{% if mates %}
+<div class="row">
+    {% for m in mates %}
+    <div class="col-md-6 mb-4">
+        <div class="card h-100 shadow-sm border-start border-4 border-info">
+            <div class="card-body d-flex align-items-center">
+                <div class="me-3">
+                    <i class="fas fa-user-graduate fa-3x text-info"></i>
+                </div>
+                <div>
+                    <h5 class="mb-1 fw-bold">{{ m[1] }}</h5>
+                    <p class="mb-0 text-muted small"><i class="fas fa-id-badge"></i> {{ m[0] }}</p>
+                    <p class="mb-0 text-muted small"><i class="fas fa-phone"></i> {{ m[2] }}</p>
+                    <p class="mb-0 text-muted small"><i class="fas fa-map-marker-alt"></i> {{ m[3] }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+    <div class="alert alert-warning">
+        Bạn đang ở một mình hoặc chưa có phòng!
+    </div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Đăng Nhập - KTX Đại Học Hải Phòng</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body {
+            background-color: #f0f2f5; /* Nền xám nhạt giống ảnh */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .login-card {
+            background: white;
+            padding: 40px 30px;
+            width: 100%;
+            max-width: 450px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border-top: 4px solid #4285f4; /* Viền xanh trên cùng giống ảnh */
+            border-radius: 4px;
+        }
+
+        .logo-container {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .logo-img {
+            width: 80px;
+            height: 80px;
+            /* Thay ảnh logo trường bạn vào đây */
+            /* Nếu chưa có file logo.png trong static, nó sẽ hiện ảnh demo */
+            object-fit: contain;
+        }
+
+        .login-title {
+            text-align: center;
+            font-weight: bold;
+            color: #555;
+            margin-bottom: 30px;
+            font-size: 1.1rem;
+            
+        }
+
+        .form-control {
+            background-color: #e8f0fe; /* Màu nền input xanh nhạt giống ảnh */
+            border: 1px solid #ccc;
+            height: 45px;
+            font-size: 16px;
+            border-radius: 4px;
+        }
+
+        .form-control:focus {
+            background-color: white;
+            border-color: #4285f4;
+            box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.2);
+        }
+
+        .btn-login {
+            background-color: #4285f4; /* Màu xanh Google */
+            color: white;
+            font-weight: bold;
+            height: 45px;
+            border: none;
+            border-radius: 4px;
+            width: 100%;
+            margin-top: 20px;
+            transition: background 0.3s;
+        }
+
+        .btn-login:hover {
+            background-color: #3367d6;
+        }
+
+        .footer-text {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 13px;
+            color: #666;
+        }
+
+        .footer-text a {
+            text-decoration: none;
+            color: #0056b3;
+        }
+
+        /* Giả lập captcha (chỉ để trang trí cho giống ảnh) */
+        .fake-captcha {
+            border: 1px solid #d3d3d3;
+            background: #f9f9f9;
+            border-radius: 3px;
+            padding: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 15px;
+            width: 100%;
+            height: 74px;
+        }
+        .captcha-checkbox {
+            display: flex;
+            align-items: center;
+        }
+        .captcha-checkbox input {
+            width: 24px;
+            height: 24px;
+            margin-right: 10px;
+            cursor: pointer;
+        }
+        .captcha-logo {
+            text-align: center;
+            color: #555;
+            font-size: 10px;
+        }
+        .captcha-logo i {
+            font-size: 28px;
+            color: #4285f4;
+            display: block;
+            margin-bottom: 2px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-card">
+        <div class="logo-container">
+            <img src="{{ url_for('static', filename='logo.png') }}" alt="" class="logo-img">
+        </div> <div class="login-title">
+            KÝ TÚC XÁ SINH VIÊN - eHPUni
+        </div>
+
+        <hr style="border-top: 1px solid #eee; margin-bottom: 25px;">
+
+        <form method="POST">
+      
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    <div class="alert alert-danger py-2" style="font-size: 14px;">
+                        <i class="fas fa-exclamation-triangle me-1"></i> {{ messages[0] }}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            <div class="mb-3">
+                <input type="text" name="username" class="form-control" placeholder="Tên đăng nhập / Mã sinh viên" required autofocus>
+            </div>
+
+            <div class="mb-3">
+                <input type="password" name="password" class="form-control" placeholder="Mật khẩu" required>
+            </div>
+
+            <div class="fake-captcha">
+                <div class="captcha-checkbox">
+                    <input type="checkbox" id="robot-check" name="captcha" required>
+                    <label for="robot-check" style="font-size: 14px; color: #333;">I'm not a robot</label>
+                </div>
+                <div class="captcha-logo">
+                    <i class="fas fa-sync-alt"></i>
+                    reCAPTCHA
+                </div>
+            </div>
+
+            <button type="submit" class="btn-login">Đăng nhập</button>
+        </form>
+    </div>
+
+    <div class="footer-text">
+        Bạn gặp vấn đề khi truy cập? <a href="#">Liên hệ 0898.21.20.31</a>
+    </div>
+
+</body>
+</html>

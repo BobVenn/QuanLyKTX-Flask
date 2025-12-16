@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3>🏠 ĐĂNG KÝ & TRẢ PHÒNG</h3>
+    {% if current_room %}
+        <div class="alert alert-success m-0 py-2 px-4">
+            Bạn đang ở phòng: <b>{{ current_room }}</b>
+            <form method="POST" class="d-inline ms-3" onsubmit="return confirm('Bạn chắc chắn muốn trả phòng và rời khỏi KTX?');">
+                <input type="hidden" name="return_room" value="1">
+                <button class="btn btn-sm btn-danger fw-bold">❌ Trả phòng</button>
+            </form>
+        </div>
+    {% else %}
+        <div class="alert alert-warning m-0 py-2 px-4">
+            Bạn chưa có phòng. Hãy chọn phòng bên dưới!
+        </div>
+    {% endif %}
+</div>
+
+<div class="card card-custom">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="fas fa-list"></i> Danh Sách Phòng Trống</h5>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Mã Phòng</th>
+                    <th>Vị trí</th>
+                    <th>Sức chứa</th>
+                    <th>Hiện tại</th>
+                    <th>Tình trạng</th>
+                    <th>Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in rooms %}
+                <tr>
+                    <td class="fw-bold">{{ r[0] }}</td>
+                    <td>{{ r[1] }} - {{ r[2] }}</td>
+                    <td>{{ r[3] }} người</td>
+                    <td>{{ r[4] }} người</td>
+                    <td><span class="badge bg-success">Còn trống {{ r[3] - r[4] }} chỗ</span></td>
+                    <td>
+                        {% if not current_room %}
+                        <form method="POST">
+                            <input type="hidden" name="book_room" value="1">
+                            <input type="hidden" name="room_id" value="{{ r[0] }}">
+                            <button class="btn btn-sm btn-outline-primary fw-bold">Đăng ký</button>
+                        </form>
+                        {% else %}
+                        <button class="btn btn-sm btn-secondary" disabled>Đăng ký</button>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

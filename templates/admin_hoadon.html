@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="text-center mb-4">
+    <h3 class="fw-bold text-secondary text-uppercase"><i class="fas fa-file-invoice-dollar me-2"></i> QUẢN LÝ CÔNG NỢ & THU CHI</h3>
+</div>
+
+<div class="card mb-4 border-0 shadow-sm">
+    <div class="card-body p-0">
+        <div class="d-flex text-center">
+            <div class="flex-fill p-3 border-end">
+                <div class="text-primary fw-bold fs-5">Tổng phải thu</div>
+                <div class="fs-4 fw-bold text-dark">{{ "{:,.0f}".format(stats.total) }} đ</div>
+            </div>
+            <div class="flex-fill p-3 border-end">
+                <div class="text-success fw-bold fs-5">Đã thu</div>
+                <div class="fs-4 fw-bold text-dark">{{ "{:,.0f}".format(stats.collected) }} đ</div>
+            </div>
+            <div class="flex-fill p-3 bg-light">
+                <div class="text-danger fw-bold fs-5">Còn nợ</div>
+                <div class="fs-4 fw-bold text-danger">{{ "{:,.0f}".format(stats.debt) }} đ</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card card-custom p-3 mb-3 bg-white">
+    <form method="GET" class="row g-2 align-items-center">
+        <div class="col-auto"><label class="fw-bold">Tháng:</label></div>
+        <div class="col-auto">
+            <select name="month" class="form-select form-select-sm">
+                {% for m in range(1, 13) %}
+                <option value="{{ m }}" {{ 'selected' if filters.month == m else '' }}>{{ m }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="col-auto"><label class="fw-bold">Năm:</label></div>
+        <div class="col-auto">
+            <select name="year" class="form-select form-select-sm">
+                {% for y in range(2023, 2030) %}
+                <option value="{{ y }}" {{ 'selected' if filters.year == y else '' }}>{{ y }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="col-auto"><label class="fw-bold">Trạng thái:</label></div>
+        <div class="col-auto">
+            <select name="status" class="form-select form-select-sm">
+                <option {{ 'selected' if filters.status == 'Tất cả' }}>Tất cả</option>
+                <option {{ 'selected' if filters.status == 'Chưa thanh toán' }}>Chưa thanh toán</option>
+                <option {{ 'selected' if filters.status == 'Đã thanh toán' }}>Đã thanh toán</option>
+            </select>
+        </div>
+
+        <div class="col-auto ms-auto">
+            <input type="text" name="keyword" class="form-control form-control-sm" placeholder="Tìm Mã/Tên SV..." value="{{ filters.keyword }}">
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-secondary btn-sm">Làm mới</button>
+        </div>
+    </form>
+</div>
+
+<form method="POST" id="mainForm">
+    <div class="card card-custom border-0 shadow-sm mb-5">
+        <div class="card-body p-0 table-responsive" style="height: 450px;">
+            <table class="table table-hover table-bordered mb-0 align-middle text-center text-nowrap">
+                <thead class="text-white sticky-top" style="background-color: #1abc9c;">
+                    <tr>
+                        <th width="40"><input type="checkbox" onclick="toggleAll(this)"></th>
+                        <th>Mã HĐ</th>
+                        <th>Mã SV</th>
+                        <th>Họ Tên</th>
+                        <th>Phòng</th>
+                        <th>Loại Phí</th>
+                        <th>Số Tiền</th>
+                        <th>Ngày Lập</th>
+                        <th>Trạng Thái</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for inv in invoices %}
+                    <tr>
+                        <td><input type="checkbox" name="chk_id" value="{{ inv[0] }}"></td>
+                        <td>{{ inv[0] }}</td>
+                        <td class="fw-bold">{{ inv[1] }}</td>
+                        <td class="text-start">{{ inv[2] }}</td>
+                        <td>{{ inv[3] if inv[3] else '-' }}</td>
+                        <td class="text-start">{{ inv[4] }}</td>
+                        <td class="fw-bold">{{ "{:,.0f}".format(inv[5]) }}</td>
+                        <td>{{ inv[6].strftime('%d/%m/%Y') }}</td>
+                        <td>
+                            {% if inv[7] == 'Đã thanh toán' %}
+                                <span class="text-success fw-bold">Đã thanh toán</span>
+                            {% else %}
+                                <span class="text-danger">Chưa thanh toán</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="9" class="py-5 text-muted">Không có dữ liệu hóa đơn</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="fixed-bottom bg-light border-top p-3 shadow-lg" style="margin-left: 260px;"> <div class="container-fluid d-flex justify-content-center gap-3">
+            <button type="button" class="btn btn-primary fw-bold" data-bs-toggle="modal" data-bs-target="#modalAddSingle">
+                <i class="fas fa-file-invoice me-2"></i> Thêm Hóa Đơn Lẻ
+            </button>
+            
+            <button type="button" class="btn btn-warning text-dark fw-bold" data-bs-toggle="modal" data-bs-target="#modalAddBatch">
+                <i class="fas fa-layer-group me-2"></i> Tạo Phí Hàng Loạt
+            </button>
+
+            <button type="submit" name="action" value="pay" class="btn btn-success fw-bold" onclick="return confirm('Xác nhận ĐÃ THU TIỀN các hóa đơn đang chọn?')">
+                <i class="fas fa-money-bill-wave me-2"></i> Thu Tiền (Duyệt)
+            </button>
+
+            <button type="submit" name="action" value="delete" class="btn btn-danger fw-bold" onclick="return confirm('Xóa vĩnh viễn các hóa đơn đang chọn?')">
+                <i class="fas fa-trash-alt me-2"></i> Xóa Hóa Đơn
+            </button>
+        </div>
+    </div>
+</form>
+
+<div class="modal fade" id="modalAddSingle" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title fw-bold">Thêm Hóa Đơn Mới</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form method="POST">
+                    <input type="hidden" name="action" value="add_single">
+                    <div class="mb-3">
+                        <label class="fw-bold">Mã Sinh Viên:</label>
+                        <input type="text" name="masv" class="form-control" required placeholder="Ví dụ: SV001">
+                    </div>
+                    <div class="mb-3">
+                        <label class="fw-bold">Loại Phí:</label>
+                        <select name="loai" class="form-select">
+                            <option>Tiền điện</option>
+                            <option>Tiền nước</option>
+                            <option>Tiền phòng</option>
+                            <option>Phí vệ sinh</option>
+                            <option>Phạt vi phạm</option>
+                            <option>Khác</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="fw-bold">Số Tiền (VNĐ):</label>
+                        <input type="number" name="tien" class="form-control" required>
+                    </div>
+                    <div class="text-end">
+                        <button class="btn btn-primary fw-bold">Lưu Hóa Đơn</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalAddBatch" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title fw-bold text-dark">Tạo Phí Hàng Loạt</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info small">
+                    <i class="fas fa-info-circle"></i> Sẽ tạo hóa đơn cho <strong>TẤT CẢ</strong> sinh viên đang có phòng.
+                </div>
+                <form method="POST">
+                    <input type="hidden" name="action" value="add_batch">
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <label class="fw-bold">Tháng:</label>
+                            <select name="thang" class="form-select">
+                                {% for m in range(1, 13) %}<option value="{{ m }}" {{ 'selected' if now.month == m else '' }}>{{ m }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="fw-bold">Năm:</label>
+                            <select name="nam" class="form-select">
+                                <option value="2025">2025</option>
+                                <option value="2026">2026</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="fw-bold">Loại Phí:</label>
+                        <select name="loai_goc" class="form-select">
+                            <option>Tiền phòng</option>
+                            <option>Tiền điện</option>
+                            <option>Tiền nước</option>
+                            <option>Vệ sinh</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="fw-bold">Số Tiền (VNĐ/Người):</label>
+                        <input type="number" name="tien" class="form-control" required value="0">
+                    </div>
+                    <div class="text-end">
+                        <button class="btn btn-warning fw-bold">Tạo Hàng Loạt</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function toggleAll(source) {
+        checkboxes = document.getElementsByName('chk_id');
+        for(var i=0, n=checkboxes.length;i<n;i++) {
+            checkboxes[i].checked = source.checked;
+        }
+    }
+</script>
+
+{% endblock %}

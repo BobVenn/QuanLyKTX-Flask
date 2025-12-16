@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card card-stat">
+            <div class="card-header bg-warning text-dark">
+                <h5><i class="fas fa-tools"></i> GỬI YÊU CẦU SỬA CHỮA</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label>Loại thiết bị:</label>
+                            <select name="thietbi" class="form-select">
+                                <option>Điều hòa</option>
+                                <option>Quạt</option>
+                                <option>Bóng đèn</option>
+                                <option>Ổ cắm</option>
+                                <option>Cửa/Khóa</option>
+                                <option>Khác</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label>Mức độ ưu tiên:</label>
+                            <select name="mucdo" class="form-select">
+                                <option>Thấp</option>
+                                <option selected>Trung bình</option>
+                                <option>Cao</option>
+                                <option class="text-danger fw-bold">Khẩn cấp</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label>Mô tả chi tiết hư hỏng:</label>
+                        <textarea name="mota" class="form-control" rows="4" required placeholder="Ví dụ: Bóng đèn phòng tắm bị cháy..."></textarea>
+                    </div>
+
+                    <div class="mb-4">
+                        <label>📸 Ảnh tình trạng (Nếu có):</label>
+                        <input type="file" name="image" class="form-control" accept="image/*">
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-warning btn-lg">🚀 Gửi Yêu Cầu</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

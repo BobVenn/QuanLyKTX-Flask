@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3>📝 DUYỆT ĐƠN ĐĂNG KÝ PHÒNG</h3>
+</div>
+
+<div class="card card-custom">
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0 align-middle text-center">
+            <thead class="table-primary">
+                <tr>
+                    <th>Mã Đơn</th>
+                    <th>Sinh Viên</th>
+                    <th>Xin vào Phòng</th>
+                    <th>Ngày Gửi</th>
+                    <th>Trạng Thái</th>
+                    <th>Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for d in ds_don %}
+                <tr>
+                    <td>#{{ d[0] }}</td>
+                    <td class="text-start ps-4">
+                        <b>{{ d[2] }}</b><br>
+                        <span class="text-muted small">{{ d[1] }}</span>
+                    </td>
+                    <td class="fw-bold text-primary">{{ d[3] }}</td>
+                    <td>{{ d[4].strftime('%d/%m/%Y %H:%M') }}</td>
+                    <td><span class="badge bg-warning text-dark">{{ d[5] }}</span></td>
+                    <td>
+                        <div class="d-flex justify-content-center gap-2">
+                            <form method="POST">
+                                <input type="hidden" name="madon" value="{{ d[0] }}">
+                                <input type="hidden" name="action" value="approve">
+                                <button class="btn btn-success btn-sm" title="Duyệt"><i class="fas fa-check"></i></button>
+                            </form>
+                            <form method="POST">
+                                <input type="hidden" name="madon" value="{{ d[0] }}">
+                                <input type="hidden" name="action" value="reject">
+                                <button class="btn btn-danger btn-sm" title="Từ chối"><i class="fas fa-times"></i></button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="py-5 text-muted fst-italic">
+                        <i class="fas fa-inbox fa-2x mb-2"></i><br>
+                        Hiện không có đơn đăng ký nào chờ duyệt.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

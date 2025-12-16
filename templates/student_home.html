@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="w-100 text-white p-4 mb-4 shadow-sm d-flex justify-content-between align-items-center" 
+     style="background-color: #1abc9c; margin: -30px -30px 30px -30px; width: calc(100% + 60px);">
+    <h2 class="m-0 fw-bold text-uppercase">HỆ THỐNG QUẢN LÝ KTX - SINH VIÊN</h2>
+    <span class="fst-italic">Hôm nay, {{ now }}</span>
+</div>
+
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body p-4">
+        <div class="d-flex align-items-center">
+            <div class="me-4">
+                {% if ava %}
+                    <img src="data:image/png;base64,{{ ava }}" class="rounded-circle" width="100" height="100" style="object-fit: cover;">
+                {% else %}
+                    <div class="rounded-circle bg-info d-flex align-items-center justify-content-center text-white" style="width: 80px; height: 80px; font-size: 40px;">
+                        <i class="fas fa-user"></i>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div>
+                <h3 class="fw-bold text-dark mb-1">Xin chào, {{ info[0] }}!</h3>
+                <p class="text-secondary mb-0 fs-5">Mã SV: {{ session['masv'] }} | Phòng: <span class="fw-bold text-dark">{{ info[1] if info[1] else 'Chưa có' }}</span></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-6">
+        <div class="card h-100 shadow-sm border-0">
+            <div class="card-body">
+                <h5 class="card-title text-primary fw-bold mb-3" style="border-left: 4px solid #3498db; padding-left: 10px;">Tình Trạng Tài Chính</h5>
+                <hr class="text-muted">
+                
+                {% if bills %}
+                    <p class="text-danger fw-bold"><i class="fas fa-exclamation-triangle me-2"></i> Bạn có {{ bills|length }} hóa đơn chưa thanh toán!</p>
+                    
+                    {% set total = namespace(value=0) %}
+                    {% for b in bills %}{% set total.value = total.value + b[3] %}{% endfor %}
+                    
+                    <h3 class="text-danger fw-bold mb-4">Tổng nợ: {{ "{:,.0f}".format(total.value) }} VNĐ</h3>
+                    
+                    <a href="#" class="btn btn-danger px-4 py-2 rounded-0 shadow-sm">Thanh toán ngay</a>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-check-circle text-success fa-3x mb-3"></i>
+                        <h5 class="text-success">Không có dư nợ</h5>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card h-100 shadow-sm border-0">
+            <div class="card-body">
+                <h5 class="card-title text-warning fw-bold mb-3" style="border-left: 4px solid #f39c12; padding-left: 10px;">Yêu Cầu Sửa Chữa</h5>
+                <hr class="text-muted">
+                
+                <p class="mb-1">Thiết bị: <span class="fw-bold">Quạt</span></p> <p class="fw-bold text-warning">Trạng thái: Chờ xử lý</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="my-5"><hr class="w-25 mx-auto"></div>
+
+{% endblock %}

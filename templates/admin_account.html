@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3>🔐 QUẢN LÝ TÀI KHOẢN</h3>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addAdminModal">
+        <i class="fas fa-user-shield"></i> Thêm Admin
+    </button>
+</div>
+
+<div class="card card-custom">
+    <div class="card-body p-0">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="bg-light">
+                <tr>
+                    <th>ID</th>
+                    <th>Tên đăng nhập</th>
+                    <th>Vai trò</th>
+                    <th>Họ và Tên</th>
+                    <th>Công cụ</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in users %}
+                <tr>
+                    <td>{{ u[0] }}</td>
+                    <td class="fw-bold text-primary">{{ u[1] }}</td>
+                    <td>
+                        {% if u[2] == 'admin' %} <span class="badge bg-dark">Quản trị viên</span>
+                        {% else %} <span class="badge bg-info text-dark">Sinh viên</span> {% endif %}
+                    </td>
+                    <td>{{ u[3] if u[3] else '(Chưa cập nhật)' }}</td>
+                    <td>
+                        <div class="btn-group">
+                            <form method="POST" onsubmit="return confirm('Reset mật khẩu về 123456?');">
+                                <input type="hidden" name="action" value="reset">
+                                <input type="hidden" name="user_id" value="{{ u[0] }}">
+                                <button class="btn btn-sm btn-warning" title="Reset Pass"><i class="fas fa-key"></i></button>
+                            </form>
+                            <form method="POST" class="ms-1" onsubmit="return confirm('XÓA VĨNH VIỄN tài khoản này?');">
+                                <input type="hidden" name="action" value="delete">
+                                <input type="hidden" name="user_id" value="{{ u[0] }}">
+                                <button class="btn btn-sm btn-danger" title="Xóa User"><i class="fas fa-trash"></i></button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="modal fade" id="addAdminModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form method="POST" class="modal-content">
+            <input type="hidden" name="action" value="add_admin">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Thêm Quản Trị Viên Mới</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label>Tên đăng nhập:</label>
+                    <input type="text" name="username" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label>Mật khẩu:</label>
+                    <input type="text" name="password" class="form-control" required>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" class="btn btn-primary">Tạo tài khoản</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="text-center mb-4">
+    <h3 class="fw-bold text-secondary text-uppercase">Quản Lý Nhập Sinh Viên</h3>
+</div>
+
+<div class="card card-custom">
+    <div class="card-header p-0 border-bottom-0">
+        <ul class="nav nav-tabs" id="myTab" role="tablist" style="background-color: #e9ecef;">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active fw-bold text-dark rounded-0" id="manual-tab" data-bs-toggle="tab" data-bs-target="#manual" type="button" role="tab">
+                    <i class="fas fa-pen-nib me-2"></i> Nhập Thủ Công
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link fw-bold text-dark rounded-0" id="excel-tab" data-bs-toggle="tab" data-bs-target="#excel" type="button" role="tab">
+                    <i class="fas fa-file-excel me-2"></i> Nhập Từ Excel
+                </button>
+            </li>
+        </ul>
+    </div>
+
+    <div class="card-body p-4 bg-white border border-top-0">
+        <div class="tab-content" id="myTabContent">
+            
+            <div class="tab-pane fade show active" id="manual" role="tabpanel">
+                <form method="POST" class="mx-auto" style="max-width: 700px;">
+                    <input type="hidden" name="manual_add" value="1">
+                    
+                    <div class="row mb-3 align-items-center">
+                        <label class="col-sm-4 fw-bold">Mã Sinh Viên (*):</label>
+                        <div class="col-sm-8">
+                            <input type="text" name="masv" class="form-control" required>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3 align-items-center">
+                        <label class="col-sm-4 fw-bold">Họ và Tên (*):</label>
+                        <div class="col-sm-8">
+                            <input type="text" name="hoten" class="form-control" required>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3 align-items-center">
+                        <label class="col-sm-4 fw-bold">Giới Tính:</label>
+                        <div class="col-sm-8">
+                            <select name="gioitinh" class="form-select">
+                                <option>Nam</option>
+                                <option>Nữ</option>
+                                <option>Khác</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3 align-items-center">
+                        <label class="col-sm-4 fw-bold">Ngày Sinh (dd/mm/yyyy):</label>
+                        <div class="col-sm-8">
+                            <input type="date" name="ngaysinh" class="form-control">
+                        </div>
+                    </div>
+
+                    <div class="row mb-3 align-items-center">
+                        <label class="col-sm-4 fw-bold">Số Điện Thoại:</label>
+                        <div class="col-sm-8">
+                            <input type="text" name="sdt" class="form-control">
+                        </div>
+                    </div>
+
+                    <div class="row mb-3 align-items-center">
+                        <label class="col-sm-4 fw-bold">Email:</label>
+                        <div class="col-sm-8">
+                            <input type="email" name="email" class="form-control">
+                        </div>
+                    </div>
+
+                    <div class="row mb-3 align-items-center">
+                        <label class="col-sm-4 fw-bold">Địa Chỉ:</label>
+                        <div class="col-sm-8">
+                            <input type="text" name="diachi" class="form-control">
+                        </div>
+                    </div>
+
+                    <hr>
+                    <div class="text-center mb-3 text-primary fw-bold">--- Cấp Tài Khoản ---</div>
+                    
+                    <div class="row mb-3 align-items-center">
+                        <label class="col-sm-4 fw-bold">Mật khẩu mặc định:</label>
+                        <div class="col-sm-8">
+                            <input type="text" name="password" class="form-control" value="123456">
+                            <small class="text-muted fst-italic">(Sinh viên sẽ dùng Mã SV và mật khẩu này để đăng nhập)</small>
+                        </div>
+                    </div>
+
+                    <div class="text-center mt-4">
+                        <button type="submit" class="btn btn-success px-5 fw-bold">
+                            <i class="fas fa-save me-2"></i> Lưu & Cấp Tài Khoản
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="tab-pane fade text-center py-5" id="excel" role="tabpanel">
+                <h4 class="text-primary mb-3">Nhập dữ liệu hàng loạt từ file Excel</h4>
+                
+                <div class="alert alert-warning d-inline-block text-start mb-4">
+                    <strong>Cấu trúc file Excel cần có các cột:</strong><br>
+                    [masv, hoten, gioitinh, ngaysinh, sdt, email, diachi]<br>
+                    <small class="text-danger">* Mật khẩu mặc định sẽ là 123456</small>
+                </div>
+
+                <form method="POST" enctype="multipart/form-data" class="d-flex flex-column align-items-center">
+                    <input type="hidden" name="excel_add" value="1">
+                    <div class="mb-3 w-50">
+                        <input type="file" name="file_excel" class="form-control" accept=".xlsx, .xls" required>
+                    </div>
+                    <button type="submit" class="btn btn-success btn-lg">
+                        <i class="fas fa-upload me-2"></i> Tải lên & Nhập liệu
+                    </button>
+                </form>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}
