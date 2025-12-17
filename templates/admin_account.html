@@ -1,47 +1,88 @@
 {% extends "base.html" %}
 {% block content %}
+
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h3>🔐 QUẢN LÝ TÀI KHOẢN</h3>
-    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addAdminModal">
-        <i class="fas fa-user-shield"></i> Thêm Admin
+    <h3 class="fw-bold text-secondary"><i class="fas fa-users-cog me-2"></i> QUẢN LÝ TÀI KHOẢN</h3>
+    <button class="btn btn-primary fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#addAdminModal">
+        <i class="fas fa-user-plus me-2"></i> Thêm Admin
     </button>
 </div>
 
-<div class="card card-custom">
+<div class="card card-custom mb-4 p-3 bg-white border-0 shadow-sm">
+    <form method="GET" class="row g-3 align-items-center">
+        <div class="col-md-4">
+            <div class="input-group">
+                <span class="input-group-text bg-light"><i class="fas fa-search text-muted"></i></span>
+                <input type="text" name="keyword" class="form-control" placeholder="Tìm tên hoặc tài khoản..." value="{{ keyword }}">
+            </div>
+        </div>
+        <div class="col-md-3">
+            <select name="role" class="form-select" onchange="this.form.submit()">
+                <option value="all" {{ 'selected' if current_role == 'all' }}>-- Tất cả vai trò --</option>
+                <option value="admin" {{ 'selected' if current_role == 'admin' }}>Quản trị viên</option>
+                <option value="sinhvien" {{ 'selected' if current_role == 'sinhvien' }}>Sinh viên</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-secondary w-100">Tìm kiếm</button>
+        </div>
+        
+        {% if keyword or current_role != 'all' %}
+        <div class="col-md-2">
+            <a href="{{ url_for('admin_account') }}" class="btn btn-outline-danger w-100"><i class="fas fa-times me-1"></i> Xóa lọc</a>
+        </div>
+        {% endif %}
+    </form>
+</div>
+
+<div class="card card-custom border-0 shadow-sm">
     <div class="card-body p-0">
-        <table class="table table-hover align-middle mb-0">
-            <thead class="bg-light">
+        <table class="table table-hover mb-0 align-middle">
+            <thead class="table-light">
                 <tr>
-                    <th>ID</th>
+                    <th class="ps-4">ID</th>
                     <th>Tên đăng nhập</th>
                     <th>Vai trò</th>
                     <th>Họ và Tên</th>
-                    <th>Công cụ</th>
+                    <th class="text-end pe-4">Công cụ</th>
                 </tr>
             </thead>
             <tbody>
                 {% for u in users %}
                 <tr>
-                    <td>{{ u[0] }}</td>
+                    <td class="ps-4 text-muted">#{{ u[0] }}</td>
                     <td class="fw-bold text-primary">{{ u[1] }}</td>
                     <td>
-                        {% if u[2] == 'admin' %} <span class="badge bg-dark">Quản trị viên</span>
-                        {% else %} <span class="badge bg-info text-dark">Sinh viên</span> {% endif %}
+                        {% if u[2] == 'admin' %}
+                            <span class="badge bg-dark">Quản trị viên</span>
+                        {% else %}
+                            <span class="badge bg-info text-dark">Sinh viên</span>
+                        {% endif %}
                     </td>
-                    <td>{{ u[3] if u[3] else '(Chưa cập nhật)' }}</td>
-                    <td>
-                        <div class="btn-group">
-                            <form method="POST" onsubmit="return confirm('Reset mật khẩu về 123456?');">
-                                <input type="hidden" name="action" value="reset">
-                                <input type="hidden" name="user_id" value="{{ u[0] }}">
-                                <button class="btn btn-sm btn-warning" title="Reset Pass"><i class="fas fa-key"></i></button>
-                            </form>
-                            <form method="POST" class="ms-1" onsubmit="return confirm('XÓA VĨNH VIỄN tài khoản này?');">
-                                <input type="hidden" name="action" value="delete">
-                                <input type="hidden" name="user_id" value="{{ u[0] }}">
-                                <button class="btn btn-sm btn-danger" title="Xóa User"><i class="fas fa-trash"></i></button>
-                            </form>
-                        </div>
+                    <td>{{ u[3] if u[3] else '---' }}</td>
+                    <td class="text-end pe-4">
+                        <form method="POST" class="d-inline" onsubmit="return confirm('Reset mật khẩu của {{ u[1] }} về 123456?');">
+                            <input type="hidden" name="action" value="reset">
+                            <input type="hidden" name="user_id" value="{{ u[0] }}">
+                            <button class="btn btn-warning btn-sm text-dark fw-bold" title="Reset Mật khẩu">
+                                <i class="fas fa-key"></i>
+                            </button>
+                        </form>
+                        
+                        <form method="POST" class="d-inline" onsubmit="return confirm('XÓA VĨNH VIỄN tài khoản {{ u[1] }}? Hành động không thể hoàn tác!');">
+                            <input type="hidden" name="action" value="delete">
+                            <input type="hidden" name="user_id" value="{{ u[0] }}">
+                            <button class="btn btn-danger btn-sm" title="Xóa tài khoản">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" class="text-center py-5 text-muted">
+                        <i class="fas fa-search mb-2 fs-3 d-block opacity-50"></i>
+                        Không tìm thấy tài khoản nào phù hợp
                     </td>
                 </tr>
                 {% endfor %}
@@ -52,26 +93,29 @@
 
 <div class="modal fade" id="addAdminModal" tabindex="-1">
     <div class="modal-dialog">
-        <form method="POST" class="modal-content">
-            <input type="hidden" name="action" value="add_admin">
+        <div class="modal-content">
             <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title">Thêm Quản Trị Viên Mới</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <h5 class="modal-title fw-bold">Thêm Quản Trị Viên Mới</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <div class="mb-3">
-                    <label>Tên đăng nhập:</label>
-                    <input type="text" name="username" class="form-control" required>
-                </div>
-                <div class="mb-3">
-                    <label>Mật khẩu:</label>
-                    <input type="text" name="password" class="form-control" required>
-                </div>
+                <form method="POST">
+                    <input type="hidden" name="action" value="add_admin">
+                    <div class="mb-3">
+                        <label class="fw-bold">Tên đăng nhập:</label>
+                        <input type="text" name="username" class="form-control" required placeholder="Ví dụ: admin2">
+                    </div>
+                    <div class="mb-3">
+                        <label class="fw-bold">Mật khẩu:</label>
+                        <input type="text" name="password" class="form-control" required placeholder="Nhập mật khẩu...">
+                    </div>
+                    <div class="text-end">
+                        <button class="btn btn-primary fw-bold">Tạo Tài Khoản</button>
+                    </div>
+                </form>
             </div>
-            <div class="modal-footer">
-                <button type="submit" class="btn btn-primary">Tạo tài khoản</button>
-            </div>
-        </form>
+        </div>
     </div>
 </div>
+
 {% endblock %}

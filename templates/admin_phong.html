@@ -1,146 +1,142 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="text-center mb-4">
-    <h3 class="fw-bold text-secondary text-uppercase"><i class="fas fa-building me-2"></i> QUẢN LÝ PHÒNG & CƯ DÂN</h3>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3 class="fw-bold text-secondary"><i class="fas fa-building me-2"></i> QUẢN LÝ PHÒNG & CƯ DÂN</h3>
+    <button class="btn btn-success fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#addRoomModal">
+        <i class="fas fa-plus me-2"></i> Thêm Phòng
+    </button>
 </div>
 
 <div class="row">
-    <div class="col-md-7">
-        <div class="card card-custom h-100">
-            <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                <span class="fw-bold fs-5 text-primary">1. Danh Sách Phòng</span>
-                <button class="btn btn-success btn-sm fw-bold" onclick="openRoomModal('add')">
-                    <i class="fas fa-plus"></i> Thêm Phòng
-                </button>
+    <div class="col-md-8">
+        <div class="card card-custom border-0 shadow-sm" style="min-height: 500px;">
+            <div class="card-header bg-white py-3">
+                <h5 class="fw-bold text-primary m-0">1. Danh Sách Phòng</h5>
             </div>
             <div class="card-body p-0">
-                <div class="table-responsive" style="max-height: 500px;">
-                    <table class="table table-hover table-bordered mb-0 align-middle text-center">
-                        <thead class="bg-success text-white">
-                            <tr>
-                                <th>Mã Phòng</th>
-                                <th>Tòa</th>
-                                <th>Khu</th>
-                                <th>Sức Chứa</th>
-                                <th>Đang Ở</th>
-                                <th>Trạng Thái</th>
-                                <th>Sửa/Xóa</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for r in rooms %}
-                            <tr style="cursor: pointer;" onclick="loadStudents('{{ r[0] }}')" id="row_{{ r[0] }}">
-                                <td class="fw-bold">{{ r[0] }}</td>
-                                <td>{{ r[1] }}</td>
-                                <td>{{ r[2] }}</td>
-                                <td>{{ r[3] }}</td>
-                                <td class="fw-bold {{ 'text-danger' if r[4] >= r[3] else 'text-success' }}">{{ r[4] }}</td>
-                                <td>
-                                    {% if r[5] == 'Trống' %}<span class="badge bg-success">Trống</span>
-                                    {% elif r[5] == 'Đầy' %}<span class="badge bg-danger">Đầy</span>
-                                    {% else %}<span class="badge bg-warning text-dark">{{ r[5] }}</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    <button class="btn btn-warning btn-sm py-0 px-1" onclick="event.stopPropagation(); openRoomModal('edit', '{{ r[0] }}', '{{ r[1] }}', '{{ r[2] }}', '{{ r[3] }}', '{{ r[5] }}')"><i class="fas fa-edit"></i></button>
-                                    <form action="{{ url_for('admin_phong_action') }}" method="POST" class="d-inline" onsubmit="return confirm('Xóa phòng này?');">
-                                        <input type="hidden" name="action" value="delete">
-                                        <input type="hidden" name="maphong" value="{{ r[0] }}">
-                                        <button class="btn btn-danger btn-sm py-0 px-1" onclick="event.stopPropagation()"><i class="fas fa-trash"></i></button>
-                                    </form>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
+                <table class="table table-hover mb-0 align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">Mã Phòng</th>
+                            <th>Tòa - Khu</th>
+                            <th class="text-center">Sức Chứa</th>
+                            <th class="text-center">Đang Ở</th>
+                            <th class="text-center">Trạng Thái</th>
+                            <th class="text-end pe-4">Sửa/Xóa</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in rooms %}
+                        <tr style="cursor: pointer;" onclick="loadRoomStudents('{{ r[0] }}')">
+                            <td class="ps-4 fw-bold text-primary">{{ r[0] }}</td>
+                            <td>{{ r[1] }} - {{ r[2] }}</td>
+                            <td class="text-center">{{ r[3] }}</td>
+                            <td class="text-center fw-bold">{{ r[4] }}</td>
+                            <td class="text-center">
+                                {% if r[5] == 'Đầy' or r[4] >= r[3] %}
+                                    <span class="badge bg-danger">Đầy</span>
+                                {% else %}
+                                    <span class="badge bg-success">Trống</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end pe-4">
+                                <form method="POST" action="{{ url_for('admin_phong') }}" class="d-inline" onsubmit="return confirm('Bạn chắc chắn muốn xóa phòng {{ r[0] }}?');">
+                                    <input type="hidden" name="action" value="delete_room">
+                                    <input type="hidden" name="maphong" value="{{ r[0] }}">
+                                    <button class="btn btn-outline-danger btn-sm p-1" title="Xóa phòng">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="6" class="text-center py-4">Chưa có dữ liệu phòng.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
 
-    <div class="col-md-5">
-        <div class="card card-custom h-100 border-primary">
-            <div class="card-header bg-white text-center">
-                <span class="fw-bold fs-5 text-danger" id="lbl_room_name">Chưa chọn phòng</span>
+    <div class="col-md-4">
+        <div class="card card-custom border-0 shadow-sm h-100">
+            <div class="card-header bg-white py-3 border-bottom">
+                <h5 class="fw-bold text-success m-0" id="room-title">Phòng: ---</h5>
             </div>
-            <div class="card-body p-0 d-flex flex-column">
-                
-                <div class="flex-grow-1" style="min-height: 300px; overflow-y: auto;">
-                    <table class="table table-striped mb-0">
-                        <thead class="table-light">
-                            <tr>
+            <div class="card-body d-flex flex-column">
+                <div class="table-responsive flex-grow-1">
+                    <table class="table table-sm align-middle">
+                        <thead>
+                            <tr class="text-muted small">
                                 <th>Mã SV</th>
                                 <th>Họ Tên</th>
-                                <th>Ngày Vào</th>
-                                <th>Xóa</th>
+                                <th class="text-end">Xóa</th>
                             </tr>
                         </thead>
-                        <tbody id="student_list_body">
-                            <tr><td colspan="4" class="text-center py-5 text-muted">Vui lòng chọn phòng bên trái</td></tr>
+                        <tbody id="student-list-body">
+                            <tr>
+                                <td colspan="3" class="text-center text-muted py-5">
+                                    <i class="fas fa-arrow-left me-2"></i>Chọn một phòng bên trái để xem
+                                </td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
 
-                <div class="p-3 bg-light border-top" id="add_student_area" style="display: none;">
-                    <form action="{{ url_for('admin_phong_student_action') }}" method="POST" class="row g-2">
-                        <input type="hidden" name="action" value="add">
-                        <input type="hidden" name="maphong" id="input_maphong_add">
-                        <div class="col-8">
-                            <input type="text" name="masv" class="form-control" placeholder="Nhập Mã SV cần thêm..." required>
-                        </div>
-                        <div class="col-4">
-                            <button class="btn btn-success w-100 fw-bold"><i class="fas fa-plus"></i> Thêm</button>
-                        </div>
+                <div class="mt-3 pt-3 border-top">
+                    <form method="POST" action="{{ url_for('admin_phong') }}" class="input-group">
+                        <input type="hidden" name="action" value="add_student_to_room">
+                        <input type="hidden" name="phong_id" id="input-phong-id">
+                        
+                        <input type="text" name="masv" class="form-control" placeholder="Nhập Mã SV cần thêm..." required>
+                        <button class="btn btn-success fw-bold" type="submit" id="btn-add-sv" disabled>
+                            <i class="fas fa-plus"></i> Thêm
+                        </button>
                     </form>
                 </div>
-
             </div>
         </div>
     </div>
 </div>
 
-<div class="modal fade" id="roomModal" tabindex="-1">
+<div class="modal fade" id="addRoomModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title fw-bold" id="modalTitle">Thêm Phòng Mới</h5>
+                <h5 class="modal-title fw-bold">Thêm Phòng Mới</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <form action="{{ url_for('admin_phong_action') }}" method="POST">
-                    <input type="hidden" name="action" id="formAction">
-                    
+                <form method="POST" action="{{ url_for('admin_phong') }}">
+                    <input type="hidden" name="action" value="add_room">
                     <div class="mb-3">
                         <label class="fw-bold">Mã Phòng:</label>
-                        <input type="text" name="maphong" id="inp_ma" class="form-control" required>
+                        <input type="text" name="maphong" class="form-control" placeholder="VD: P101..." required>
                     </div>
                     <div class="row">
-                        <div class="col-6 mb-3">
+                        <div class="col-md-6 mb-3">
                             <label class="fw-bold">Tòa:</label>
-                            <input type="text" name="toa" id="inp_toa" class="form-control">
+                            <select name="toa" class="form-select">
+                                <option value="Tòa A">Tòa A</option>
+                                <option value="Tòa B">Tòa B</option>
+                                <option value="Tòa C">Tòa C</option>
+                            </select>
                         </div>
-                        <div class="col-6 mb-3">
+                        <div class="col-md-6 mb-3">
                             <label class="fw-bold">Khu:</label>
-                            <input type="text" name="khu" id="inp_khu" class="form-control">
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-6 mb-3">
-                            <label class="fw-bold">Sức chứa:</label>
-                            <input type="number" name="succhua" id="inp_suc" class="form-control" value="8" required>
-                        </div>
-                        <div class="col-6 mb-3">
-                            <label class="fw-bold">Trạng thái:</label>
-                            <select name="trangthai" id="inp_stt" class="form-select">
-                                <option>Trống</option>
-                                <option>Đầy</option>
-                                <option>Đang sửa chữa</option>
+                            <select name="khu" class="form-select">
+                                <option value="Khu 1">Khu 1</option>
+                                <option value="Khu 2">Khu 2</option>
                             </select>
                         </div>
                     </div>
+                    <div class="mb-3">
+                        <label class="fw-bold">Sức chứa:</label>
+                        <input type="number" name="succhua" class="form-control" value="4" min="1" required>
+                    </div>
                     <div class="text-end">
-                        <button type="submit" class="btn btn-primary px-4 fw-bold">Lưu Lại</button>
+                        <button type="submit" class="btn btn-primary fw-bold">Lưu lại</button>
                     </div>
                 </form>
             </div>
@@ -149,60 +145,52 @@
 </div>
 
 <script>
-function loadStudents(maphong) {
-    // 1. Highlight dòng
-    document.querySelectorAll('tr').forEach(r => r.classList.remove('table-active'));
-    document.getElementById('row_' + maphong).classList.add('table-active');
+    function loadRoomStudents(roomId) {
+        // 1. Cập nhật tiêu đề bên phải
+        document.getElementById('room-title').innerText = 'Phòng: ' + roomId;
+        document.getElementById('room-title').className = "fw-bold text-primary m-0";
+        
+        // 2. Cập nhật input hidden để form biết thêm vào phòng nào
+        document.getElementById('input-phong-id').value = roomId;
+        document.getElementById('btn-add-sv').disabled = false;
 
-    // 2. Cập nhật tiêu đề bên phải
-    document.getElementById('lbl_room_name').innerText = "Phòng: " + maphong;
-    document.getElementById('lbl_room_name').className = "fw-bold fs-5 text-success";
-    document.getElementById('input_maphong_add').value = maphong;
-    document.getElementById('add_student_area').style.display = 'block';
+        // 3. Gọi API lấy danh sách SV (Hàm này vẫn còn trong app.py nên dùng ok)
+        const tbody = document.getElementById('student-list-body');
+        tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted"><i class="fas fa-spinner fa-spin"></i> Đang tải...</td></tr>';
 
-    // 3. Gọi API lấy danh sách SV
-    fetch('/api/room/' + maphong + '/students')
-        .then(res => res.json())
-        .then(data => {
-            let html = '';
-            if (data.students.length === 0) {
-                html = '<tr><td colspan="4" class="text-center py-4 text-muted">Phòng trống</td></tr>';
-            } else {
-                data.students.forEach(s => {
-                    html += `
-                    <tr>
-                        <td class="fw-bold">${s.masv}</td>
-                        <td>${s.hoten}</td>
-                        <td>${s.ngayvao}</td>
-                        <td>
-                            <form action="{{ url_for('admin_phong_student_action') }}" method="POST" onsubmit="return confirm('Mời SV này ra khỏi phòng?');">
-                                <input type="hidden" name="action" value="remove">
-                                <input type="hidden" name="maphong" value="${maphong}">
-                                <input type="hidden" name="masv" value="${s.masv}">
-                                <button class="btn btn-outline-danger btn-sm border-0"><i class="fas fa-times-circle"></i></button>
-                            </form>
-                        </td>
-                    </tr>`;
-                });
-            }
-            document.getElementById('student_list_body').innerHTML = html;
-        });
-}
+        fetch(`/api/room/${roomId}/students`)
+            .then(response => response.json())
+            .then(data => {
+                tbody.innerHTML = ''; // Xóa icon loading
 
-function openRoomModal(type, ma='', toa='', khu='', suc='', stt='Trống') {
-    document.getElementById('formAction').value = type;
-    document.getElementById('modalTitle').innerText = type === 'add' ? "Thêm Phòng Mới" : "Sửa Phòng " + ma;
-    
-    document.getElementById('inp_ma').value = ma;
-    document.getElementById('inp_ma').readOnly = (type === 'edit'); // Không cho sửa mã khi edit
-    
-    document.getElementById('inp_toa').value = toa;
-    document.getElementById('inp_khu').value = khu;
-    document.getElementById('inp_suc').value = suc;
-    document.getElementById('inp_stt').value = stt;
-    
-    new bootstrap.Modal(document.getElementById('roomModal')).show();
-}
+                if (data.students && data.students.length > 0) {
+                    data.students.forEach(sv => {
+                        const row = `
+                            <tr>
+                                <td class="fw-bold">${sv.masv}</td>
+                                <td>${sv.hoten}</td>
+                                <td class="text-end">
+                                    <form method="POST" action="{{ url_for('admin_phong') }}" onsubmit="return confirm('Đưa ${sv.hoten} ra khỏi phòng?');">
+                                        <input type="hidden" name="action" value="remove_student">
+                                        <input type="hidden" name="masv" value="${sv.masv}">
+                                        <button class="btn btn-sm btn-light text-danger border-0 p-1" title="Xóa">
+                                            <i class="fas fa-times-circle"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        `;
+                        tbody.innerHTML += row;
+                    });
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted fst-italic py-3">Phòng trống</td></tr>';
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                tbody.innerHTML = '<tr><td colspan="3" class="text-center text-danger">Lỗi tải dữ liệu</td></tr>';
+            });
+    }
 </script>
 
 {% endblock %}

@@ -176,25 +176,126 @@ def admin_dashboard():
     return render_template('dashboard.html', stats=stats, plot_url=plot_url, now=now_str)
 
 # =================================================================
-#  3. ADMIN: QUẢN LÝ PHÒNG & XẾP CHỖ
+# =================================================================
+#  3. ADMIN: QUẢN LÝ PHÒNG (CODE CHUẨN - DÙNG CÁI NÀY)
 # =================================================================
 
 
-@app.route('/admin/phong')
+@app.route('/admin/phong', methods=['GET', 'POST'])
 def admin_phong():
     if not login_required('admin'):
         return redirect(url_for('login'))
 
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute(
-        "SELECT MaPhong, Toa, Khu, SucChua, SoNguoiHienTai, TrangThai FROM Phong ORDER BY MaPhong")
-    rooms = cursor.fetchall()
-    cursor.execute("SELECT DISTINCT Toa FROM Phong WHERE Toa IS NOT NULL")
-    toas = [r[0] for r in cursor.fetchall()]
-    conn.close()
 
-    return render_template('admin_phong.html', rooms=rooms, toas=toas)
+    # --- XỬ LÝ POST ---
+    if request.method == 'POST':
+        act = request.form.get('action')
+
+        # 1. THÊM PHÒNG
+        if act == 'add_room':
+            mp = request.form.get('maphong').strip().upper()
+            cursor.execute("SELECT Count(*) FROM Phong WHERE MaPhong=?", (mp,))
+            if cursor.fetchone()[0] > 0:
+                flash(f'Mã phòng {mp} đã tồn tại!', 'danger')
+            else:
+                cursor.execute("INSERT INTO Phong (MaPhong, Toa, Khu, SucChua, TrangThai) VALUES (?, ?, ?, ?, N'Trống')",
+                               (mp, request.form.get('toa'), request.form.get('khu'), request.form.get('succhua')))
+                conn.commit()
+                flash(f'Đã thêm phòng {mp}!', 'success')
+
+        # 2. XẾP CHỖ (QUAN TRỌNG: Logic đếm trực tiếp để sửa lỗi)
+        elif act == 'add_student_to_room':
+            masv = request.form.get('masv').strip().upper()
+            phong = request.form.get('phong_id')
+
+            cursor.execute(
+                "SELECT Count(*) FROM SinhVien WHERE MaSV=?", (masv,))
+            if cursor.fetchone()[0] == 0:
+                flash('Mã sinh viên không tồn tại!', 'danger')
+            else:
+                # Đếm số người thực tế đang ở trong phòng
+                cursor.execute("""
+                    SELECT SucChua, (SELECT COUNT(*) FROM SinhVien WHERE Phong=?) 
+                    FROM Phong WHERE MaPhong=?
+                """, (phong, phong))
+                room_info = cursor.fetchone()
+
+                suc_chua = int(room_info[0])
+                da_o = int(room_info[1])
+
+                if da_o >= suc_chua:
+                    flash(
+                        f'⛔ Phòng {phong} đã đầy ({da_o}/{suc_chua})!', 'danger')
+                else:
+                    cursor.execute(
+                        "UPDATE SinhVien SET Phong=?, NgayVao=GETDATE() WHERE MaSV=?", (phong, masv))
+
+                    # Cập nhật trạng thái hiển thị
+                    new_status = 'Đầy' if (da_o + 1) >= suc_chua else 'Trống'
+                    cursor.execute(
+                        "UPDATE Phong SET TrangThai=? WHERE MaPhong=?", (new_status, phong))
+
+                    conn.commit()
+                    flash(f'✅ Đã xếp {masv} vào phòng {phong}!', 'success')
+
+        # 3. XÓA SV KHỎI PHÒNG
+        elif act == 'remove_student':
+            masv = request.form.get('masv')
+            # Lấy phòng cũ để update trạng thái
+            cursor.execute("SELECT Phong FROM SinhVien WHERE MaSV=?", (masv,))
+            old_room = cursor.fetchone()
+
+            cursor.execute(
+                "UPDATE SinhVien SET Phong=NULL, NgayVao=NULL WHERE MaSV=?", (masv,))
+
+            if old_room and old_room[0]:
+                cursor.execute(
+                    "UPDATE Phong SET TrangThai=N'Trống' WHERE MaPhong=?", (old_room[0],))
+
+            conn.commit()
+            flash(f'Đã đưa {masv} ra khỏi phòng!', 'warning')
+
+        # 4. XÓA PHÒNG
+        elif act == 'delete_room':
+            mp = request.form.get('maphong')
+            cursor.execute(
+                "SELECT Count(*) FROM SinhVien WHERE Phong=?", (mp,))
+            if cursor.fetchone()[0] > 0:
+                flash('Không thể xóa phòng đang có người ở!', 'danger')
+            else:
+                cursor.execute("DELETE FROM Phong WHERE MaPhong=?", (mp,))
+                conn.commit()
+                flash('Đã xóa phòng thành công!', 'success')
+
+        return redirect(url_for('admin_phong'))
+
+    # --- XỬ LÝ GET (HIỂN THỊ) ---
+    sql = """
+        SELECT 
+            p.MaPhong, p.Toa, p.Khu, p.SucChua, 
+            (SELECT COUNT(*) FROM SinhVien WHERE Phong = p.MaPhong) as DangO, 
+            p.TrangThai
+        FROM Phong p ORDER BY p.MaPhong ASC
+    """
+    cursor.execute(sql)
+    rooms = cursor.fetchall()
+
+    cursor.execute(
+        "SELECT MaSV, HoTen, NgayVao, Phong FROM SinhVien WHERE Phong IS NOT NULL")
+    all_students = cursor.fetchall()
+
+    student_map = {}
+    for s in all_students:
+        pid = s[3]
+        if pid not in student_map:
+            student_map[pid] = []
+        student_map[pid].append({'masv': s[0], 'hoten': s[1], 'ngayvao': s[2].strftime(
+            '%d/%m/%Y') if s[2] else '---'})
+
+    conn.close()
+    return render_template('admin_phong.html', rooms=rooms, students_by_room=student_map)
 
 
 @app.route('/api/room/<room_id>/students')
@@ -212,90 +313,8 @@ def api_room_students(room_id):
         '%d/%m/%Y') if s[3] else ''} for s in data]
     return {'students': students}
 
-
-@app.route('/admin/phong/action', methods=['POST'])
-def admin_phong_action():
-    if not login_required('admin'):
-        return redirect(url_for('login'))
-    action = request.form.get('action')
-    maphong = request.form.get('maphong').strip().upper()
-    conn = get_db()
-    cursor = conn.cursor()
-    try:
-        if action == 'add':
-            cursor.execute("INSERT INTO Phong (MaPhong, Toa, Khu, SucChua, SoNguoiHienTai, TrangThai) VALUES (?, ?, ?, ?, 0, ?)",
-                           (maphong, request.form.get('toa'), request.form.get('khu'), request.form.get('succhua'), request.form.get('trangthai')))
-            flash(f'Đã thêm phòng {maphong}', 'success')
-        elif action == 'edit':
-            cursor.execute("UPDATE Phong SET Toa=?, Khu=?, SucChua=?, TrangThai=? WHERE MaPhong=?",
-                           (request.form.get('toa'), request.form.get('khu'), request.form.get('succhua'), request.form.get('trangthai'), maphong))
-            flash(f'Đã cập nhật phòng {maphong}', 'success')
-        elif action == 'delete':
-            cursor.execute(
-                "SELECT SoNguoiHienTai FROM Phong WHERE MaPhong=?", (maphong,))
-            if cursor.fetchone()[0] > 0:
-                flash('Không thể xóa phòng đang có người!', 'danger')
-            else:
-                cursor.execute("DELETE FROM Phong WHERE MaPhong=?", (maphong,))
-                flash('Đã xóa phòng!', 'success')
-        conn.commit()
-    except Exception as e:
-        conn.rollback()
-        flash(f'Lỗi: {e}', 'danger')
-    finally:
-        conn.close()
-    return redirect(url_for('admin_phong'))
-
-
-@app.route('/admin/phong/student/action', methods=['POST'])
-def admin_phong_student_action():
-    if not login_required('admin'):
-        return redirect(url_for('login'))
-    action = request.form.get('action')
-    maphong = request.form.get('maphong')
-    masv = request.form.get('masv').strip().upper()
-    conn = get_db()
-    cursor = conn.cursor()
-    try:
-        if action == 'add':
-            cursor.execute(
-                "SELECT SoNguoiHienTai, SucChua FROM Phong WHERE MaPhong=?", (maphong,))
-            room = cursor.fetchone()
-            if room and room[0] < room[1]:
-                cursor.execute(
-                    "SELECT Phong FROM SinhVien WHERE MaSV=?", (masv,))
-                sv = cursor.fetchone()
-                if not sv:
-                    flash(f'Mã SV {masv} không tồn tại!', 'danger')
-                elif sv[0]:
-                    flash(f'SV {masv} đang ở phòng {sv[0]}!', 'warning')
-                else:
-                    cursor.execute(
-                        "UPDATE SinhVien SET Phong=?, NgayVao=GETDATE() WHERE MaSV=?", (maphong, masv))
-                    cursor.execute(
-                        "UPDATE Phong SET SoNguoiHienTai = SoNguoiHienTai + 1 WHERE MaPhong=?", (maphong,))
-                    flash(f'Đã thêm {masv} vào {maphong}', 'success')
-            else:
-                flash('Phòng đầy!', 'danger')
-        elif action == 'remove':
-            cursor.execute(
-                "UPDATE SinhVien SET Phong=NULL, NgayVao=NULL WHERE MaSV=?", (masv,))
-            cursor.execute(
-                "UPDATE Phong SET SoNguoiHienTai = SoNguoiHienTai - 1 WHERE MaPhong=?", (maphong,))
-            flash(f'Đã mời {masv} ra khỏi phòng', 'warning')
-
-        cursor.execute(
-            "UPDATE Phong SET TrangThai = CASE WHEN SoNguoiHienTai >= SucChua THEN N'Đầy' ELSE N'Trống' END WHERE MaPhong=?", (maphong,))
-        conn.commit()
-    except Exception as e:
-        conn.rollback()
-        flash(f'Lỗi: {e}', 'danger')
-    finally:
-        conn.close()
-    return redirect(url_for('admin_phong'))
-
 # =================================================================
-#  4. ADMIN: QUẢN LÝ HÓA ĐƠN & TÀI CHÍNH
+#  4. ADMIN: QUẢN LÝ HÓA ĐƠN (ĐÃ FIX LỖI & THÊM CHIA TIỀN ĐIỆN)
 # =================================================================
 
 
@@ -303,13 +322,49 @@ def admin_phong_student_action():
 def admin_hoadon():
     if not login_required('admin'):
         return redirect(url_for('login'))
+
     conn = get_db()
     cursor = conn.cursor()
 
+    # --- XỬ LÝ POST (THÊM, SỬA, XÓA) ---
     if request.method == 'POST':
+        # Dùng thống nhất tên biến 'action'
         action = request.form.get('action')
+
         try:
-            if action == 'add_single':
+            # 1. CHỨC NĂNG MỚI: TẠO HÓA ĐƠN ĐIỆN/NƯỚC THEO PHÒNG
+            if action == 'create_room_bill':
+                phong = request.form.get('phong_id')
+                loai_phi = request.form.get('loai_phi')
+                tong_tien = int(request.form.get('tong_tien'))
+                thang = request.form.get('thang')
+                nam = request.form.get('nam')
+                noi_dung = f"{loai_phi} T{thang}/{nam}"
+
+                # Lấy danh sách SV trong phòng (Dùng MaSV và Phong theo cấu trúc DB cũ của bạn)
+                cursor.execute(
+                    "SELECT MaSV FROM SinhVien WHERE Phong=?", (phong,))
+                ds_sv = cursor.fetchall()
+                so_nguoi = len(ds_sv)
+
+                if so_nguoi > 0:
+                    tien_moi_nguoi = tong_tien // so_nguoi
+                    for sv in ds_sv:
+                        # Tạo hóa đơn cho từng người
+                        cursor.execute("""
+                            INSERT INTO HoaDon (MaSV, LoaiHoaDon, SoTien, NgayLap, TrangThai)
+                            VALUES (?, ?, ?, GETDATE(), N'Chưa thanh toán')
+                        """, (sv[0], noi_dung, tien_moi_nguoi))
+
+                    conn.commit()
+                    flash(
+                        f'✅ Đã chia {tong_tien:,}đ cho {so_nguoi} người phòng {phong}. Mỗi người: {tien_moi_nguoi:,}đ', 'success')
+                else:
+                    flash(
+                        f'⚠️ Phòng {phong} hiện không có sinh viên nào!', 'warning')
+
+            # 2. THÊM HÓA ĐƠN LẺ (Code cũ)
+            elif action == 'add_single':
                 masv = request.form.get('masv').strip().upper()
                 cursor.execute(
                     "SELECT Count(*) FROM SinhVien WHERE MaSV=?", (masv,))
@@ -320,6 +375,8 @@ def admin_hoadon():
                                    (masv, request.form.get('loai'), request.form.get('tien')))
                     conn.commit()
                     flash('Thêm hóa đơn thành công!', 'success')
+
+            # 3. THÊM HÀNG LOẠT (Code cũ)
             elif action == 'add_batch':
                 ten_phi = f"{request.form.get('loai_goc')} T{request.form.get('thang')}/{request.form.get('nam')}"
                 tien = request.form.get('tien')
@@ -335,6 +392,8 @@ def admin_hoadon():
                         count += 1
                 conn.commit()
                 flash(f'Đã tạo {count} hóa đơn hàng loạt!', 'success')
+
+            # 4. THANH TOÁN HOẶC XÓA (Code cũ)
             elif action == 'pay' or action == 'delete':
                 ids = request.form.getlist('chk_id')
                 if ids:
@@ -348,44 +407,83 @@ def admin_hoadon():
                             f"DELETE FROM HoaDon WHERE MaHoaDon IN ({ph})", ids)
                         flash(f'Đã xóa {len(ids)} hóa đơn!', 'success')
                     conn.commit()
+
         except Exception as e:
             conn.rollback()
             flash(f'Lỗi: {e}', 'danger')
+
         return redirect(url_for('admin_hoadon'))
 
-    # GET: Hiển thị & Lọc
+   # --- XỬ LÝ GET (HIỂN THỊ DANH SÁCH & BỘ LỌC) ---
     import datetime
     today = datetime.date.today()
+
+    # Lấy giá trị từ trình duyệt gửi lên, nếu không có thì lấy mặc định
     f_month = request.args.get('month', str(today.month))
     f_year = request.args.get('year', str(today.year))
     f_status = request.args.get('status', 'Tất cả')
     keyword = request.args.get('keyword', '').strip()
 
-    sql = "SELECT hd.MaHoaDon, sv.MaSV, sv.HoTen, sv.Phong, hd.LoaiHoaDon, hd.SoTien, hd.NgayLap, hd.TrangThai FROM HoaDon hd LEFT JOIN SinhVien sv ON hd.MaSV = sv.MaSV WHERE MONTH(hd.NgayLap) = ? AND YEAR(hd.NgayLap) = ?"
-    params = [f_month, f_year]
+    # Câu lệnh SQL cơ bản (JOIN để lấy tên sinh viên và phòng)
+    sql = """
+        SELECT hd.MaHoaDon, sv.MaSV, sv.HoTen, sv.Phong, hd.LoaiHoaDon, hd.SoTien, hd.NgayLap, hd.TrangThai 
+        FROM HoaDon hd 
+        LEFT JOIN SinhVien sv ON hd.MaSV = sv.MaSV 
+        WHERE 1=1
+    """
+    params = []
+
+    # 1. Lọc theo Tháng (Nếu có)
+    if f_month and f_month != '0':
+        sql += " AND MONTH(hd.NgayLap) = ?"
+        params.append(f_month)
+
+    # 2. Lọc theo Năm
+    if f_year:
+        sql += " AND YEAR(hd.NgayLap) = ?"
+        params.append(f_year)
+
+    # 3. Lọc theo Trạng thái
     if f_status != 'Tất cả':
         sql += " AND hd.TrangThai = ?"
         params.append(f_status)
+
+    # 4. Tìm kiếm theo từ khóa (Mã SV hoặc Tên)
     if keyword:
         sql += " AND (sv.MaSV LIKE ? OR sv.HoTen LIKE ?)"
         params.append(f"%{keyword}%")
         params.append(f"%{keyword}%")
 
     sql += " ORDER BY hd.MaHoaDon DESC"
+
     cursor.execute(sql, tuple(params))
     invoices = cursor.fetchall()
 
+    # Tính toán lại thống kê dựa trên danh sách đã lọc
     stats = {'total': 0, 'collected': 0, 'debt': 0}
     for inv in invoices:
         amt = float(inv[5]) if inv[5] else 0
         stats['total'] += amt
-        if inv[7] == 'Đã thanh toán':
+        if inv[7] == u'Đã thanh toán':  # Dùng u để đảm bảo Unicode nếu cần
             stats['collected'] += amt
         else:
             stats['debt'] += amt
+
+    # Lấy danh sách Phòng cho Modal
+    cursor.execute(
+        "SELECT DISTINCT Phong FROM SinhVien WHERE Phong IS NOT NULL AND Phong != '' ORDER BY Phong ASC")
+    ds_phong = cursor.fetchall()
+
     conn.close()
 
-    return render_template('admin_hoadon.html', invoices=invoices, stats=stats, filters={'month': int(f_month), 'year': int(f_year), 'status': f_status, 'keyword': keyword}, now=today)
+    # Trả về giao diện kèm theo các giá trị lọc để giữ trạng thái trên thanh chọn
+    return render_template('admin_hoadon.html',
+                           invoices=invoices,
+                           phongs=ds_phong,
+                           stats=stats,
+                           filters={'month': int(f_month), 'year': int(
+                               f_year), 'status': f_status, 'keyword': keyword},
+                           now=today)
 
 # =================================================================
 #  5. ADMIN: QUẢN LÝ THIẾT BỊ
@@ -536,7 +634,7 @@ def admin_approve():
     return render_template('admin_approve.html', ds_don=ds_don)
 
 
-# --- [THAY THẾ ĐOẠN admin_account TRONG app.py] ---
+# --- [THAY THẾ HÀM admin_account TRONG app.py] ---
 
 @app.route('/admin/account', methods=['GET', 'POST'])
 def admin_account():
@@ -546,94 +644,102 @@ def admin_account():
     conn = get_db()
     cursor = conn.cursor()
 
+    # --- XỬ LÝ POST (Thêm, Xóa, Reset - Giữ nguyên logic cũ của bạn) ---
     if request.method == 'POST':
         act = request.form.get('action')
         uid = request.form.get('user_id')
 
         # 1. RESET MẬT KHẨU
         if act == 'reset':
-            cursor.execute(
-                "UPDATE Users SET Password='123456' WHERE UserID=?", (uid,))
-            conn.commit()
-            flash(
-                f'✅ Đã reset mật khẩu User {uid} về mặc định "123456"', 'success')
-
-        # 2. XÓA TÀI KHOẢN (Đã thêm nghiệp vụ bảo vệ Admin gốc)
-        elif act == 'delete':
-            # Bước 1: Lấy thông tin người sắp bị xóa
             cursor.execute("SELECT Username FROM Users WHERE UserID=?", (uid,))
             target = cursor.fetchone()
-
             if target:
-                # Chuyển về chữ thường để so sánh
                 target_name = target[0].lower()
-
-                # --- NGHIỆP VỤ 1: CHẶN XÓA SUPER ADMIN ---
-                if target_name == 'admin':
-                    flash(
-                        '⛔ CẢNH BÁO: Không thể xóa tài khoản Quản Trị Gốc (Super Admin)!', 'danger')
-
-                # --- NGHIỆP VỤ 2: CHẶN TỰ XÓA CHÍNH MÌNH ---
-                elif str(uid) == str(session['user_id']):
-                    flash(
-                        '⚠️ Bạn không thể tự xóa tài khoản của chính mình khi đang đăng nhập!', 'warning')
-
+                current_user = session['username'].lower()
+                if target_name == 'admin' and current_user != 'admin':
+                    flash('⛔ CẢNH BÁO: Bạn không đủ quyền reset Super Admin!', 'danger')
                 else:
-                    # Nếu qua được 2 cửa trên thì mới cho xóa
+                    cursor.execute(
+                        "UPDATE Users SET Password='123456' WHERE UserID=?", (uid,))
+                    conn.commit()
+                    flash(
+                        f'✅ Đã reset mật khẩu {target[0]} về "123456"', 'success')
+
+        # 2. XÓA TÀI KHOẢN
+        elif act == 'delete':
+            cursor.execute("SELECT Username FROM Users WHERE UserID=?", (uid,))
+            target = cursor.fetchone()
+            if target:
+                target_name = target[0].lower()
+                if target_name == 'admin':
+                    flash('⛔ CẢNH BÁO: Không thể xóa Super Admin!', 'danger')
+                elif str(uid) == str(session['user_id']):
+                    flash('⚠️ Không thể tự xóa chính mình!', 'warning')
+                else:
                     try:
-                        # Xóa ở bảng con trước (nếu có rằng buộc khóa ngoại)
                         cursor.execute(
                             "DELETE FROM SinhVien WHERE UserID=?", (uid,))
                         cursor.execute(
                             "DELETE FROM QuanTriVien WHERE UserID=?", (uid,))
-                        # Xóa bảng cha
                         cursor.execute(
                             "DELETE FROM Users WHERE UserID=?", (uid,))
-
                         conn.commit()
-                        flash(
-                            f'✅ Đã xóa vĩnh viễn tài khoản: {target[0]}', 'success')
+                        flash(f'✅ Đã xóa tài khoản: {target[0]}', 'success')
                     except Exception as e:
                         conn.rollback()
-                        flash(f'❌ Lỗi khi xóa: {e}', 'danger')
-            else:
-                flash('Tài khoản không tồn tại!', 'danger')
+                        flash(f'Lỗi xóa: {e}', 'danger')
 
-        # 3. THÊM ADMIN MỚI
+        # 3. THÊM ADMIN
         elif act == 'add_admin':
             u = request.form['username'].strip()
             p = request.form['password'].strip()
-            try:
-                # Check trùng tên
+            cursor.execute("SELECT Count(*) FROM Users WHERE Username=?", (u,))
+            if cursor.fetchone()[0] > 0:
+                flash(f'Tên đăng nhập "{u}" đã tồn tại!', 'danger')
+            else:
                 cursor.execute(
-                    "SELECT Count(*) FROM Users WHERE Username=?", (u,))
-                if cursor.fetchone()[0] > 0:
-                    flash(f'Tên đăng nhập "{u}" đã tồn tại!', 'danger')
-                else:
-                    cursor.execute(
-                        "INSERT INTO Users (Username, Password, Role) VALUES (?, ?, 'admin')", (u, p))
-                    new_id = cursor.execute("SELECT @@IDENTITY").fetchone()[0]
-                    cursor.execute(
-                        "INSERT INTO QuanTriVien (HoTen, UserID) VALUES (?, ?)", (f"Admin {u}", new_id))
-                    conn.commit()
-                    flash(f'✅ Đã thêm Admin mới: {u}', 'success')
-            except Exception as e:
-                conn.rollback()
-                flash(f'Lỗi thêm Admin: {e}', 'danger')
+                    "INSERT INTO Users (Username, Password, Role) VALUES (?, ?, 'admin')", (u, p))
+                new_id = cursor.execute("SELECT @@IDENTITY").fetchone()[0]
+                cursor.execute(
+                    "INSERT INTO QuanTriVien (HoTen, UserID) VALUES (?, ?)", (f"Admin {u}", new_id))
+                conn.commit()
+                flash(f'✅ Đã thêm Admin: {u}', 'success')
 
-    # Load danh sách hiển thị
-    cursor.execute("""
+        return redirect(url_for('admin_account'))
+
+    # --- XỬ LÝ GET (TÌM KIẾM & LỌC) ---
+    keyword = request.args.get('keyword', '').strip()
+    role_filter = request.args.get('role', 'all')
+
+    # Câu lệnh SQL cơ bản
+    sql = """
         SELECT u.UserID, u.Username, u.Role, 
-               CASE WHEN u.Role='sinhvien' THEN sv.HoTen ELSE qtv.HoTen END 
+               CASE WHEN u.Role='sinhvien' THEN sv.HoTen ELSE qtv.HoTen END as HoTen
         FROM Users u 
         LEFT JOIN SinhVien sv ON u.UserID = sv.UserID 
         LEFT JOIN QuanTriVien qtv ON u.UserID = qtv.UserID
-        ORDER BY u.Role, u.Username
-    """)
+        WHERE 1=1
+    """
+    params = []
+
+    # 1. Nếu có từ khóa tìm kiếm
+    if keyword:
+        sql += " AND (u.Username LIKE ? OR sv.HoTen LIKE ? OR qtv.HoTen LIKE ?)"
+        # Tìm gần đúng (%) trong Username hoặc Tên thật
+        params.extend([f"%{keyword}%", f"%{keyword}%", f"%{keyword}%"])
+
+    # 2. Nếu có lọc theo vai trò
+    if role_filter != 'all':
+        sql += " AND u.Role = ?"
+        params.append(role_filter)
+
+    sql += " ORDER BY u.Role ASC, u.Username ASC"
+
+    cursor.execute(sql, tuple(params))
     users = cursor.fetchall()
     conn.close()
 
-    return render_template('admin_account.html', users=users)
+    return render_template('admin_account.html', users=users, keyword=keyword, current_role=role_filter)
 
 
 @app.route('/admin/student/import', methods=['GET', 'POST'])
@@ -658,6 +764,7 @@ def admin_student_import():
                                    (masv, request.form['hoten'], request.form['gioitinh'], request.form.get('ngaysinh') or None, request.form['sdt'], request.form['email'], request.form['diachi'], uid))
                     conn.commit()
                     flash('Thêm sinh viên thành công!', 'success')
+            # Tìm đoạn này trong app.py và thay thế:
             elif 'excel_add' in request.form:
                 file = request.files['file_excel']
                 if file:
@@ -668,18 +775,36 @@ def admin_student_import():
                         masv = str(row.get('masv', '')).strip().upper()
                         if not masv:
                             continue
+
                         cursor.execute(
                             "SELECT Count(*) FROM SinhVien WHERE MaSV=?", (masv,))
                         if cursor.fetchone()[0] == 0:
+                            # 1. Tạo tài khoản
                             cursor.execute(
                                 "INSERT INTO Users (Username, Password, Role) VALUES (?, '123456', 'sinhvien')", (masv,))
                             uid = cursor.execute(
                                 "SELECT @@IDENTITY").fetchone()[0]
-                            cursor.execute("INSERT INTO SinhVien (MaSV, HoTen, GioiTinh, SoDienThoai, Email, DiaChi, UserID) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                                           (masv, str(row.get('hoten', '')), row.get('gioitinh'), str(row.get('sdt')), str(row.get('email')), str(row.get('diachi')), uid))
+
+                            # 2. Thêm SV (Phải có NgaySinh ở đây mới hiện lên hồ sơ được)
+                            sql = """
+                                INSERT INTO SinhVien (MaSV, HoTen, GioiTinh, NgaySinh, SoDienThoai, Email, DiaChi, UserID) 
+                                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                            """
+                            cursor.execute(sql, (
+                                masv,
+                                str(row.get('hoten', '')),
+                                row.get('gioitinh'),
+                                # QUAN TRỌNG: Dòng này lấy từ Excel
+                                row.get('ngaysinh'),
+                                str(row.get('sdt')),
+                                str(row.get('email')),
+                                str(row.get('diachi')),
+                                uid
+                            ))
                             count += 1
                     conn.commit()
-                    flash(f'Đã nhập {count} sinh viên từ Excel!', 'success')
+                    flash(
+                        f'✅ Đã nhập thành công {count} sinh viên!', 'success')
         except Exception as e:
             conn.rollback()
             flash(f'Lỗi: {e}', 'danger')
